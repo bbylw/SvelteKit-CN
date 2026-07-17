@@ -1,92 +1,44 @@
-# SvelteKit 中文文档网站
+[![Chat](https://img.shields.io/discord/457912077277855764?label=chat&logo=discord)](https://svelte.dev/chat)
 
-基于 Vue 3 + Vite 构建的 SvelteKit 中文文档网站。
+# SvelteKit
 
-## 项目特点
+精简高效的 Web 开发。请阅读[文档](https://svelte.dev/docs/kit)开始上手。
 
-- ✨ **Vue 3** - 使用最新的 Vue 3 组合式 API
-- 📦 **Vite** - 极速的开发体验
-- 🎨 **暗色主题** - 精心设计的暗色界面
-- 📝 **Markdown 渲染** - 支持语法高亮的 Markdown 渲染
-- 🚀 **快速导航** - 侧边栏导航系统
-- 📱 **响应式设计** - 支持移动端
+### 软件包
 
-## 技术栈
+| 软件包                                                                      | 更新日志                                                     |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [@sveltejs/kit](https://github.com/sveltejs/kit/tree/version-3/packages/kit)                                               | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/kit/CHANGELOG.md)                        |
+| [@sveltejs/adapter-auto](https://github.com/sveltejs/kit/tree/version-3/packages/adapter-auto)                             | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/adapter-auto/CHANGELOG.md)               |
+| [@sveltejs/adapter-cloudflare](https://github.com/sveltejs/kit/tree/version-3/packages/adapter-cloudflare)                 | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/adapter-cloudflare/CHANGELOG.md)         |
+| [@sveltejs/adapter-netlify](https://github.com/sveltejs/kit/tree/version-3/packages/adapter-netlify)                       | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/adapter-netlify/CHANGELOG.md)            |
+| [@sveltejs/adapter-node](https://github.com/sveltejs/kit/tree/version-3/packages/adapter-node)                             | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/adapter-node/CHANGELOG.md)               |
+| [@sveltejs/adapter-static](https://github.com/sveltejs/kit/tree/version-3/packages/adapter-static)                         | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/adapter-static/CHANGELOG.md)             |
+| [@sveltejs/adapter-vercel](https://github.com/sveltejs/kit/tree/version-3/packages/adapter-vercel)                         | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/adapter-vercel/CHANGELOG.md)             |
+| [@sveltejs/amp](https://github.com/sveltejs/kit/tree/version-3/packages/amp)                                               | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/amp/CHANGELOG.md)                        |
+| [@sveltejs/enhanced-img](https://github.com/sveltejs/kit/tree/version-3/packages/enhanced-img)                             | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/enhanced-img/CHANGELOG.md)               |
+| [@sveltejs/package](https://github.com/sveltejs/kit/tree/version-3/packages/package)                                       | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/package/CHANGELOG.md)                    |
 
-- **Vue 3** - 渐进式 JavaScript 框架
-- **TypeScript** - 类型安全
-- **Vue Router** - 官方路由管理器
-- **Pinia** - 状态管理
-- **Vite** - 下一代前端构建工具
-- **Markdown-it** - Markdown 解析器
-- **Highlight.js** - 代码语法高亮
+[更多适配器](https://sveltesociety.dev/packages?category=sveltekit-adapters)由社区维护。
 
-## 快速开始
+## 报告 Bug
 
-### 安装依赖
+请确保你所报告的问题确实与 SvelteKit 相关。许多关于项目构建方式的问题其实源自 [Vite](https://vitejs.dev/)——SvelteKit 项目正是基于 Vite 构建的。你可以使用 `npm create vite@latest` 创建仅客户端（client-side）的最小复现项目，使用 `npm create vite-extra@latest` 创建 SSR 或库相关的最小复现项目。
 
-```sh
-npm install
-```
+如果问题源自 Vite，请在 [Vite 问题追踪器](https://github.com/vitejs/vite/issues)中报告。
 
-### 启动开发服务器
+## 参与贡献
 
-```sh
-npm run dev
-```
+有关如何在本地开发 SvelteKit 的信息，请参阅 [CONTRIBUTING.md](https://github.com/sveltejs/kit/blob/version-3/CONTRIBUTING.md)。
 
-访问 http://localhost:5173 查看网站
+## 支持 Svelte
 
-### 构建生产版本
+Svelte 是一个采用 MIT 许可的开源项目，其持续开发完全得益于优秀的志愿者们。如果你愿意支持他们的工作，可以考虑：
 
-```sh
-npm run build
-```
+- [在 Open Collective 上成为赞助者](https://opencollective.com/svelte)。
 
-### 预览生产构建
+通过 Open Collective 捐赠的资金将用于补偿与 Svelte 开发相关的支出，例如托管费用。如果收到足够的捐赠，资金也可能更直接地用于支持 Svelte 的开发。
 
-```sh
-npm run preview
-```
+## 许可证
 
-## 项目结构
-
-```
-sveltekit-cn-docs/
-├── public/
-│   └── docs/           # SvelteKit 文档内容
-├── src/
-│   ├── assets/         # 静态资源
-│   ├── components/     # Vue 组件
-│   │   └── Sidebar.vue # 侧边栏导航组件
-│   ├── router/         # 路由配置
-│   ├── stores/         # Pinia 状态管理
-│   ├── utils/          # 工具函数
-│   │   └── markdown.ts # Markdown 渲染工具
-│   ├── views/          # 页面视图
-│   │   ├── DocView.vue # 文档页面
-│   │   └── HomeView.vue # 首页
-│   ├── App.vue         # 根组件
-│   └── main.ts         # 应用入口
-├── docs-structure.ts   # 文档结构和路由配置
-└── vite.config.ts      # Vite 配置
-```
-
-## 文档结构
-
-文档分为以下几个主要部分：
-
-- **入门** - SvelteKit 简介和快速开始
-- **核心概念** - 路由、Load 函数、表单操作等
-- **构建和部署** - 构建应用和各类适配器
-- **高级** - Hooks、错误处理、Service Workers 等
-- **最佳实践** - 认证、性能、SEO 等
-- **附录** - FAQ、集成、调试等
-- **参考** - API 参考、配置、CLI 等
-
-## 浏览器支持
-
-- Chrome (推荐)
-- Firefox
-- Safari
-- Edge
+[MIT](https://github.com/sveltejs/kit/blob/version-3/LICENSE)
