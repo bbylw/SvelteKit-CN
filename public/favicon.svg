@@ -1,0 +1,37 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF6B35"/>
+      <stop offset="0.5" stop-color="#FF3E00"/>
+      <stop offset="1" stop-color="#D62E00"/>
+    </linearGradient>
+    <linearGradient id="highlight" x1="120" y1="80" x2="300" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 圆角矩形背景 -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+
+  <!-- 高光层 -->
+  <rect width="512" height="512" rx="112" fill="url(#highlight)"/>
+
+  <!-- Svelte 交织形状（白色）— 直接内联，不使用 use 引用 -->
+  <path
+    d="M 398 178 C 398 130 356 92 300 92 C 250 92 210 116 188 152 L 146 212 C 142 218 140 225 140 232 C 140 242 146 251 156 255 C 166 259 177 257 184 249 L 226 189 C 238 171 258 160 280 160 C 318 160 348 190 348 228 C 348 246 340 263 326 275 L 318 281 C 332 285 344 293 354 304 C 380 282 398 248 398 210 Z M 114 334 C 114 382 156 420 212 420 C 262 420 302 396 324 360 L 366 300 C 370 294 372 287 372 280 C 372 270 366 261 356 257 C 346 253 335 255 328 263 L 286 323 C 274 341 254 352 232 352 C 194 352 164 322 164 284 C 164 266 172 249 186 237 L 194 231 C 180 227 168 219 158 208 C 132 230 114 264 114 302 Z"
+    fill="#FFFFFF"
+  />
+
+  <!-- 内部描边，营造交织感 -->
+  <path
+    d="M 398 178 C 398 130 356 92 300 92 C 250 92 210 116 188 152 L 146 212 C 142 218 140 225 140 232 C 140 242 146 251 156 255 C 166 259 177 257 184 249 L 226 189 C 238 171 258 160 280 160 C 318 160 348 190 348 228 C 348 246 340 263 326 275 L 318 281 C 332 285 344 293 354 304 C 380 282 398 248 398 210 Z M 114 334 C 114 382 156 420 212 420 C 262 420 302 396 324 360 L 366 300 C 370 294 372 287 372 280 C 372 270 366 261 356 257 C 346 253 335 255 328 263 L 286 323 C 274 341 254 352 232 352 C 194 352 164 322 164 284 C 164 266 172 249 186 237 L 194 231 C 180 227 168 219 158 208 C 132 230 114 264 114 302 Z"
+    fill="none"
+    stroke="#FF3E00"
+    stroke-width="10"
+    opacity="0.3"
+  />
+
+  <!-- 底部光带 -->
+  <rect x="100" y="430" width="312" height="6" rx="3" fill="#FFFFFF" opacity="0.6"/>
+</svg>
