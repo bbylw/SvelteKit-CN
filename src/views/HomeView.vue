@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import Sidebar from '../components/Sidebar.vue'
+import { docsStructure } from '../docs-structure'
 
 const router = useRouter()
 
@@ -8,195 +9,233 @@ const goToDoc = (path: string) => {
   router.push(path)
 }
 
-const copyToClipboard = (text: string) => {
-  navigator.clipboard.writeText(text)
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+  } catch {
+    // 静默失败
+  }
 }
+
+const features = [
+  {
+    title: '编译时优化',
+    desc: 'Svelte 将组件编译为高效的原生 JS，没有虚拟 DOM 运行时开销。',
+    icon: 'bolt',
+  },
+  {
+    title: '文件即路由',
+    desc: '基于文件系统的路由，布局组件、参数与 REST 行为一眼可读。',
+    icon: 'route',
+  },
+  {
+    title: '数据加载',
+    desc: 'load 函数在服务端与客户端并行运行，自动处理水合与预取。',
+    icon: 'database',
+  },
+  {
+    title: '表单操作',
+    desc: '渐进增强的表单处理，支持表单 Action 与失效模式回退。',
+    icon: 'form',
+  },
+  {
+    title: '灵活部署',
+    desc: '一个适配器接口覆盖 Node、Cloudflare、Netlify、Vercel 与静态站点。',
+    icon: 'deploy',
+  },
+  {
+    title: '类型安全',
+    desc: '路由参数、加载结果、表单动作全链路 TypeScript 类型推导。',
+    icon: 'shield',
+  },
+]
+
+const steps = [
+  { cmd: 'npx sv create my-app', note: '使用官方脚手架创建项目' },
+  { cmd: 'cd my-app', note: '进入项目目录' },
+  { cmd: 'npm install', note: '安装依赖' },
+  { cmd: 'npm run dev', note: '启动开发服务器' },
+]
+
+const sections = docsStructure.slice(0, 4)
 </script>
 
 <template>
-  <div class="home-layout">
+  <div class="home">
     <Sidebar />
-    <main class="home-main">
-      <div class="hero">
-        <div class="hero-content">
-          <div class="logo-section">
-            <svg
-              width="128"
-              height="128"
-              viewBox="0 0 512 512"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+
+    <main class="main">
+      <!-- ── 英雄区：非对称 ── -->
+      <section class="hero">
+        <div class="hero-grid">
+          <div class="hero-left">
+            <p class="eyebrow">SvelteKit v3 · 中文文档</p>
+            <h1 class="hero-title">
+              精简高效的<br />
+              <span class="accent">Web 开发</span>框架
+            </h1>
+            <p class="hero-lead">
+              SvelteKit 是基于 Svelte 构建的应用框架。它在编译时把组件编译为高效的原生 JavaScript，
+              没有虚拟 DOM 的运行时开销——更小的包体、更快的首屏、更直观的心智模型。
+            </p>
+            <div class="hero-actions">
+              <button class="btn btn-primary" @click="goToDoc('/getting-started/introduction')">
+                开始使用
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+              </button>
+              <button class="btn btn-ghost" @click="goToDoc('/core-concepts/routing')">
+                浏览文档
+              </button>
+            </div>
+            <div class="hero-meta">
+              <span class="meta-item">
+                <span class="dot"></span> MIT 开源协议
+              </span>
+              <span class="meta-sep">·</span>
+              <a href="https://github.com/sveltejs/kit" target="_blank" rel="noopener" class="meta-item">
+                GitHub
+              </a>
+            </div>
+          </div>
+
+          <!-- 签名元素：编译器可视化卡片 -->
+          <div class="hero-right" aria-hidden="true">
+            <div class="compile-card">
+              <div class="cc-head">
+                <span class="cc-dot red"></span>
+                <span class="cc-dot amber"></span>
+                <span class="cc-dot green"></span>
+                <span class="cc-label">compiler.svelte</span>
+              </div>
+              <div class="cc-body">
+                <div class="cc-line"><span class="cc-kw">&lt;script&gt;</span></div>
+                <div class="cc-line indent"><span class="cc-prop">let</span> <span class="cc-var">count</span> = <span class="cc-num">0</span></div>
+                <div class="cc-line indent"><span class="cc-fn">$</span>: <span class="cc-str">doubled</span> = count * <span class="cc-num">2</span></div>
+                <div class="cc-line"><span class="cc-kw">&lt;/script&gt;</span></div>
+                <div class="cc-line mt"><span class="cc-kw">&lt;button</span> <span class="cc-prop">on:click</span>=<span class="cc-str">{() =&gt; count++}</span><span class="cc-kw">&gt;</span></div>
+                <div class="cc-line indent cc-out">{count} · {doubled}</div>
+                <div class="cc-line"><span class="cc-kw">&lt;/button&gt;</span></div>
+              </div>
+              <div class="cc-arrow">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+                </svg>
+                <span>编译</span>
+              </div>
+              <div class="cc-result">
+                <div class="cc-line"><span class="cc-comment">// 编译产物：零运行时</span></div>
+                <div class="cc-line indent"><span class="cc-fn">function</span> <span class="cc-var">create_fragment</span>(<span class="cc-prop">ctx</span>) {</div>
+                <div class="cc-line indent">  <span class="cc-comment">// 直接操作 DOM</span></div>
+                <div class="cc-line indent">  <span class="cc-kw">return</span> { ... }</div>
+                <div class="cc-line indent">}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 核心特性：分隔列表，非三栏卡片 ── -->
+      <section class="features">
+        <div class="container">
+          <header class="section-head">
+            <p class="eyebrow">Why SvelteKit</p>
+            <h2 class="section-title">为性能与开发体验而生</h2>
+          </header>
+          <div class="feature-list">
+            <article v-for="(f, i) in features" :key="f.title" class="feature">
+              <span class="feature-idx">{{ String(i + 1).padStart(2, '0') }}</span>
+              <div class="feature-main">
+                <h3>{{ f.title }}</h3>
+                <p>{{ f.desc }}</p>
+              </div>
+              <span class="feature-tag">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 快速开始 ── -->
+      <section class="start">
+        <div class="container start-inner">
+          <div class="start-text">
+            <p class="eyebrow">Quick Start</p>
+            <h2 class="section-title">三十秒跑起来</h2>
+            <p class="start-lead">
+              四条命令，从零到本地开发服务器。SvelteKit 的脚手架开箱即用，无需繁琐配置。
+            </p>
+          </div>
+          <div class="start-steps">
+            <div v-for="(s, i) in steps" :key="s.cmd" class="step">
+              <span class="step-num">{{ i + 1 }}</span>
+              <button class="step-cmd" @click="copyToClipboard(s.cmd)">
+                <code>{{ s.cmd }}</code>
+                <span class="step-copy">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                </span>
+              </button>
+              <span class="step-note">{{ s.note }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 文档导航 ── -->
+      <section class="docnav">
+        <div class="container">
+          <header class="section-head">
+            <p class="eyebrow">Documentation</p>
+            <h2 class="section-title">按主题浏览</h2>
+          </header>
+          <div class="docnav-grid">
+            <button
+              v-for="section in sections"
+              :key="section.path"
+              class="docnav-card"
+              @click="goToDoc(section.items[0]?.path ?? section.path)"
             >
-              <defs>
-                <linearGradient id="heroBgGrad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-                  <stop offset="0" stop-color="#FF6B35" />
-                  <stop offset="0.5" stop-color="#FF3E00" />
-                  <stop offset="1" stop-color="#D62E00" />
-                </linearGradient>
-                <linearGradient id="heroHighlight" x1="120" y1="80" x2="300" y2="300" gradientUnits="userSpaceOnUse">
-                  <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.35" />
-                  <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
-                </linearGradient>
-              </defs>
-              <rect width="512" height="512" rx="112" fill="url(#heroBgGrad)" />
-              <rect width="512" height="512" rx="112" fill="url(#heroHighlight)" />
-              <path
-                d="M398 178C398 130 356 92 300 92C250 92 210 116 188 152L146 212C142 218 140 225 140 232C140 242 146 251 156 255C166 259 177 257 184 249L226 189C238 171 258 160 280 160C318 160 348 190 348 228C348 246 340 263 326 275L318 281C332 285 344 293 354 304C380 282 398 248 398 210Z"
-                fill="#FFFFFF"
-              />
-              <path
-                d="M114 334C114 382 156 420 212 420C262 420 302 396 324 360L366 300C370 294 372 287 372 280C372 270 366 261 356 257C346 253 335 255 328 263L286 323C274 341 254 352 232 352C194 352 164 322 164 284C164 266 172 249 186 237L194 231C180 227 168 219 158 208C132 230 114 264 114 302Z"
-                fill="#FFFFFF"
-              />
-            </svg>
-            <h1 class="hero-title">SvelteKit</h1>
-            <p class="hero-subtitle">精简高效的 Web 开发</p>
-          </div>
-
-          <p class="hero-description">
-            SvelteKit 是一个用于快速开发健壮、高性能 Web 应用的框架，基于 Svelte 构建。
-          </p>
-
-          <div class="hero-actions">
-            <button class="btn btn-primary" @click="goToDoc('/getting-started/introduction')">
-              开始使用
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </button>
-            <button class="btn btn-secondary" @click="goToDoc('/core-concepts/routing')">
-              查看文档
+              <div class="dn-top">
+                <h3>{{ section.title }}</h3>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+                </svg>
+              </div>
+              <ul class="dn-items">
+                <li v-for="item in section.items.slice(0, 4)" :key="item.path">{{ item.title }}</li>
+              </ul>
+              <span class="dn-count">共 {{ section.items.length }} 篇</span>
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="features">
-        <div class="features-container">
-          <h2 class="section-title">核心特性</h2>
-          <div class="features-grid">
-            <div class="feature-card">
-              <div class="feature-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ff3e00" stroke-width="2">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
-                </svg>
-              </div>
-              <h3>快速开发</h3>
-              <p>利用 Svelte 的编译时特性，提供极快的开发体验和热模块替换</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ff3e00" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M12 6v6l4 2"></path>
-                </svg>
-              </div>
-              <h3>高性能</h3>
-              <p>优化的构建系统，仅加载最小必需的代码，提供出色的性能表现</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ff3e00" stroke-width="2">
-                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                </svg>
-              </div>
-              <h3>灵活部署</h3>
-              <p>支持多种部署方式，包括 Node.js、静态站点、Cloudflare Workers 等</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ff3e00" stroke-width="2">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
-              </div>
-              <h3>类型安全</h3>
-              <p>完整的 TypeScript 支持，提供出色的开发体验和类型检查</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ff3e00" stroke-width="2">
-                  <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                  <line x1="4" y1="22" x2="4" y2="15"></line>
-                </svg>
-              </div>
-              <h3>服务端渲染</h3>
-              <p>可配置的渲染策略，支持 SSR、CSR 和预渲染，灵活应对不同场景</p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ff3e00" stroke-width="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-              </div>
-              <h3>安全可靠</h3>
-              <p>内置安全特性，遵循 Web 最佳实践，保障应用安全</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="getting-started">
-        <div class="getting-started-container">
-          <h2 class="section-title">快速开始</h2>
-          <div class="steps">
-            <div class="step">
-              <div class="step-number">1</div>
-              <div class="step-content">
-                <h3>创建新项目</h3>
-                <div class="code-block">
-                  <code>npm create svelte@latest my-app</code>
-                  <button class="copy-btn" @click="copyToClipboard('npm create svelte@latest my-app')">
-                    复制
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="step">
-              <div class="step-number">2</div>
-              <div class="step-content">
-                <h3>进入项目目录</h3>
-                <div class="code-block">
-                  <code>cd my-app</code>
-                  <button class="copy-btn" @click="copyToClipboard('cd my-app')">
-                    复制
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="step">
-              <div class="step-number">3</div>
-              <div class="step-content">
-                <h3>安装依赖并运行</h3>
-                <div class="code-block">
-                  <code>npm install && npm run dev</code>
-                  <button class="copy-btn" @click="copyToClipboard('npm install && npm run dev')">
-                    复制
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <!-- ── 页脚 ── -->
       <footer class="footer">
-        <div class="footer-content">
-          <p>SvelteKit 中文文档 | 基于 SvelteKit v3</p>
-          <div class="footer-links">
-            <a href="https://svelte.dev" target="_blank" rel="noopener">Svelte 官网</a>
-            <a href="https://svelte.dev/docs" target="_blank" rel="noopener">官方文档</a>
-            <a href="https://github.com/sveltejs/kit" target="_blank" rel="noopener">GitHub</a>
+        <div class="container footer-inner">
+          <div class="footer-brand">
+            <span class="brand-mark-sm">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2L3 14h6l-1 8 10-12h-6l1-8z" /></svg>
+            </span>
+            <div>
+              <p class="footer-name">SvelteKit 中文文档</p>
+              <p class="footer-tag">基于 SvelteKit v3 · MIT 协议</p>
+            </div>
           </div>
+          <nav class="footer-links">
+            <a href="https://svelte.dev" target="_blank" rel="noopener">Svelte 官网</a>
+            <a href="https://svelte.dev/docs/kit" target="_blank" rel="noopener">英文文档</a>
+            <a href="https://svelte.dev/chat" target="_blank" rel="noopener">社区</a>
+            <a href="https://github.com/sveltejs/kit" target="_blank" rel="noopener">GitHub</a>
+          </nav>
         </div>
       </footer>
     </main>
@@ -204,301 +243,525 @@ const copyToClipboard = (text: string) => {
 </template>
 
 <style scoped>
-.home-layout {
-  display: flex;
-  min-height: 100vh;
-  background-color: #0d0d0d;
+.home {
+  min-height: 100dvh;
 }
 
-.home-main {
-  flex: 1;
-  margin-left: 280px;
+.main {
+  margin-left: var(--sidebar-w);
+  min-height: 100dvh;
 }
 
+@media (max-width: 1023px) {
+  .main {
+    margin-left: 0;
+  }
+}
+
+/* ── 英雄区 ── */
 .hero {
-  background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
-  padding: 80px 60px;
-  display: flex;
+  padding: 5rem 0 4rem;
+}
+
+.hero-grid {
+  max-width: var(--layout-max);
+  margin: 0 auto;
+  padding: 0 var(--space-2xl);
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 3rem;
   align-items: center;
-  justify-content: center;
 }
 
-.hero-content {
-  max-width: 800px;
-  text-align: center;
-}
-
-.logo-section {
-  margin-bottom: 32px;
+.hero-left {
+  max-width: 560px;
 }
 
 .hero-title {
-  font-size: 3.5rem;
-  font-weight: 800;
-  margin: 24px 0 8px;
-  background: linear-gradient(135deg, #ff3e00 0%, #ff6b35 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: clamp(2.5rem, 5vw, 3.75rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  margin: 0.75rem 0 1.25rem;
+  color: var(--ink);
 }
 
-.hero-subtitle {
-  font-size: 1.5rem;
-  color: #a0a0a0;
-  margin: 0 0 24px;
+.hero-title .accent {
+  color: var(--flame);
 }
 
-.hero-description {
-  font-size: 1.125rem;
-  color: #e0e0e0;
-  line-height: 1.8;
-  margin: 0 0 40px;
+.hero-lead {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--muted);
+  max-width: 52ch;
+  margin-bottom: 2rem;
 }
 
 .hero-actions {
   display: flex;
-  gap: 16px;
-  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
 }
 
-.btn {
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--text-sm);
+  color: var(--faint);
+  font-family: var(--font-mono);
+}
+
+.meta-item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 32px;
-  border-radius: 8px;
-  font-size: 1rem;
+  gap: 0.4rem;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--moss);
+  display: inline-block;
+}
+
+.meta-sep {
+  color: var(--hairline-2);
+}
+
+/* —— 编译器卡片 —— */
+.hero-right {
+  position: relative;
+}
+
+.compile-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+
+.cc-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--paper-soft);
+}
+
+.cc-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.cc-dot.red { background: #ff5f56; }
+.cc-dot.amber { background: #ffbd2e; }
+.cc-dot.green { background: #27c93f; }
+
+.cc-label {
+  margin-left: 0.5rem;
+  color: var(--faint);
+  font-size: 0.75rem;
+}
+
+.cc-body,
+.cc-result {
+  padding: 1rem 1.25rem;
+}
+
+.cc-line {
+  white-space: pre;
+}
+
+.cc-line.indent {
+  padding-left: 1.5rem;
+}
+
+.cc-line.mt {
+  margin-top: 0.5rem;
+}
+
+.cc-kw { color: var(--slate); }
+.cc-prop { color: #b15c5c; }
+.cc-var { color: var(--ink); }
+.cc-num { color: var(--flame); }
+.cc-str { color: var(--moss); }
+.cc-fn { color: #8b5cf6; }
+.cc-out { color: var(--flame); font-weight: 500; }
+.cc-comment { color: var(--faint); }
+
+.cc-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  background: var(--flame-wash);
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--flame);
+  font-size: 0.75rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
+  letter-spacing: 0.05em;
 }
 
-.btn-primary {
-  background-color: #ff3e00;
-  color: white;
+.cc-result {
+  background: var(--paper-soft);
 }
 
-.btn-primary:hover {
-  background-color: #ff6b35;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 62, 0, 0.3);
-}
-
-.btn-secondary {
-  background-color: transparent;
-  color: #e0e0e0;
-  border: 2px solid #333;
-}
-
-.btn-secondary:hover {
-  border-color: #ff3e00;
-  color: #ff3e00;
-}
-
-.features {
-  padding: 80px 60px;
-  background-color: #0d0d0d;
-}
-
-.features-container {
-  max-width: 1200px;
-  margin: 0 auto;
+/* ── 区块通用 ── */
+.section-head {
+  margin-bottom: 2.5rem;
 }
 
 .section-title {
-  font-size: 2.5rem;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
   font-weight: 700;
-  text-align: center;
-  margin-bottom: 48px;
-  color: #ffffff;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin-top: 0.5rem;
 }
 
-.features-grid {
+/* ── 特性列表 ── */
+.features {
+  padding: 4.5rem 0;
+  background: var(--paper-soft);
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.feature-list {
+  border-top: 1px solid var(--hairline-2);
+}
+
+.feature {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 32px;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem 0.5rem;
+  border-bottom: 1px solid var(--hairline);
+  transition: padding-left 0.25s var(--ease-out);
 }
 
-.feature-card {
-  background-color: #1a1a1a;
-  border-radius: 16px;
-  padding: 32px;
-  transition: all 0.3s;
-  border: 1px solid #333;
+.feature:hover {
+  padding-left: 1.5rem;
 }
 
-.feature-card:hover {
-  transform: translateY(-4px);
-  border-color: #ff3e00;
-  box-shadow: 0 8px 24px rgba(255, 62, 0, 0.1);
+.feature:hover .feature-tag {
+  color: var(--flame);
+  transform: translateX(4px);
 }
 
-.feature-icon {
-  margin-bottom: 20px;
+.feature-idx {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--faint);
+  min-width: 2.5rem;
 }
 
-.feature-card h3 {
-  font-size: 1.25rem;
+.feature-main h3 {
+  font-size: 1.125rem;
   font-weight: 600;
-  margin-bottom: 12px;
-  color: #ffffff;
+  color: var(--ink);
+  margin-bottom: 0.35rem;
 }
 
-.feature-card p {
-  color: #a0a0a0;
+.feature-main p {
+  color: var(--muted);
+  font-size: 0.9375rem;
   line-height: 1.6;
-  font-size: 0.95rem;
 }
 
-.getting-started {
-  padding: 80px 60px;
-  background-color: #0d0d0d;
+.feature-tag {
+  color: var(--hairline-2);
+  transition: transform 0.25s var(--ease-out), color 0.25s;
 }
 
-.getting-started-container {
-  max-width: 800px;
-  margin: 0 auto;
+/* ── 快速开始 ── */
+.start {
+  padding: 4.5rem 0;
 }
 
-.steps {
+.start-inner {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 3.5rem;
+  align-items: start;
+}
+
+.start-text {
+  position: sticky;
+  top: 2rem;
+}
+
+.start-lead {
+  color: var(--muted);
+  font-size: 1rem;
+  margin-top: 1rem;
+  max-width: 40ch;
+}
+
+.start-steps {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 1rem;
 }
 
 .step {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1rem;
 }
 
-.step-number {
-  width: 48px;
-  height: 48px;
-  background-color: #ff3e00;
+.step-num {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
+  background: var(--flame-wash);
+  color: var(--flame);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.step-cmd {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: white;
-  flex-shrink: 0;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  background: var(--ink);
+  color: #e8e6dc;
+  border: 1px solid #2a2a2e;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  transition: border-color 0.2s, transform 0.15s;
 }
 
-.step-content {
-  flex: 1;
+.step-cmd:hover {
+  border-color: var(--flame);
 }
 
-.step-content h3 {
+.step-cmd:active {
+  transform: scale(0.98);
+}
+
+.step-cmd code {
+  font-size: 0.875rem;
+  color: #ffb89f;
+}
+
+.step-copy {
+  color: var(--faint);
+  transition: color 0.2s;
+}
+
+.step-cmd:hover .step-copy {
+  color: var(--flame-soft);
+}
+
+.step-note {
+  grid-column: 2;
+  font-size: 0.8125rem;
+  color: var(--faint);
+  margin-top: -0.25rem;
+}
+
+/* ── 文档导航 ── */
+.docnav {
+  padding: 4.5rem 0;
+  background: var(--paper-soft);
+  border-top: 1px solid var(--hairline);
+}
+
+.docnav-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.docnav-card {
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  transition: border-color 0.2s, transform 0.25s var(--ease-out), box-shadow 0.25s;
+}
+
+.docnav-card:hover {
+  border-color: var(--flame);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-soft);
+}
+
+.dn-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.dn-top h3 {
   font-size: 1.125rem;
   font-weight: 600;
-  margin-bottom: 12px;
-  color: #ffffff;
+  color: var(--ink);
 }
 
-.code-block {
-  background-color: #1a1a1a;
-  border-radius: 8px;
-  padding: 16px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid #333;
+.docnav-card:hover .dn-top svg {
+  color: var(--flame);
+  transform: translateX(3px);
 }
 
-.code-block code {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.9rem;
-  color: #ff6b35;
+.dn-top svg {
+  color: var(--faint);
+  transition: transform 0.25s, color 0.25s;
 }
 
-.copy-btn {
-  background-color: #2a2a2a;
-  color: #e0e0e0;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: all 0.2s;
+.dn-items {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
 }
 
-.copy-btn:hover {
-  background-color: #ff3e00;
-  color: white;
+.dn-items li {
+  font-size: 0.875rem;
+  color: var(--muted);
+  padding: 0.25rem 0;
 }
 
+.dn-count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--faint);
+}
+
+/* ── 页脚 ── */
 .footer {
-  padding: 40px 60px;
-  background-color: #0a0a0a;
-  border-top: 1px solid #333;
+  padding: 2.5rem 0;
+  border-top: 1px solid var(--hairline);
+  background: var(--paper);
 }
 
-.footer-content {
-  max-width: 1200px;
-  margin: 0 auto;
+.footer-inner {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
 }
 
-.footer-content p {
-  color: #a0a0a0;
-  font-size: 0.9rem;
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-mark-sm {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  background: var(--flame);
+  color: #fff;
+  border-radius: var(--radius-xs);
+}
+
+.footer-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+
+.footer-tag {
+  font-size: 0.75rem;
+  color: var(--faint);
+  font-family: var(--font-mono);
 }
 
 .footer-links {
   display: flex;
-  gap: 24px;
+  gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .footer-links a {
-  color: #e0e0e0;
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: color 0.2s;
+  color: var(--muted);
+  font-size: 0.875rem;
 }
 
 .footer-links a:hover {
-  color: #ff3e00;
+  color: var(--ink);
+}
+
+/* ── 响应式 ── */
+@media (max-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .hero-right {
+    max-width: 480px;
+  }
+
+  .start-inner {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .start-text {
+    position: static;
+  }
+
+  .docnav-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-  .home-main {
-    margin-left: 0;
-  }
-
   .hero {
-    padding: 40px 20px;
+    padding: 4.5rem 0 3rem;
   }
 
-  .hero-title {
-    font-size: 2.5rem;
-  }
-
-  .hero-subtitle {
-    font-size: 1.125rem;
-  }
-
-  .hero-actions {
-    flex-direction: column;
+  .hero-grid {
+    padding: 0 var(--space-lg);
   }
 
   .features,
-  .getting-started {
-    padding: 40px 20px;
+  .start,
+  .docnav {
+    padding: 3rem 0;
   }
 
-  .features-grid {
-    grid-template-columns: 1fr;
+  .feature {
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    padding: 1.25rem 0.25rem;
   }
 
-  .footer-content {
+  .feature-tag {
+    display: none;
+  }
+
+  .footer-inner {
     flex-direction: column;
-    gap: 16px;
-    text-align: center;
+    align-items: flex-start;
   }
 }
 </style>
