@@ -8,23 +8,24 @@ title: Cloudflare Workers
 
 ## 用法
 
-用 `npm i -D @sveltejs/adapter-cloudflare-workers` 安装，然后将适配器添加到你的 `svelte.config.js`：
+用 `npm i -D @sveltejs/adapter-cloudflare-workers` 安装，然后将适配器添加到你的 `vite.config.js`：
 
 ```js
 // @errors: 2307
-/// file: svelte.config.js
+/// file: vite.config.js
 import adapter from '@sveltejs/adapter-cloudflare-workers';
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
 
-/** @type {import('@sveltejs/kit').Config} */
-const config = {
-	kit: {
-		adapter: adapter({
-			// 见下文可在此设置的选项
+export default defineConfig({
+	plugins: [
+		sveltekit({
+			+++adapter: adapter({
+				// 见下文可在此设置的选项
+			})+++
 		})
-	}
-};
-
-export default config;
+	]
+});
 ```
 
 ## 选项

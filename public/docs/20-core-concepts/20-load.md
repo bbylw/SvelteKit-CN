@@ -51,13 +51,13 @@ export function load({ params }) {
 ```js
 /// file: src/routes/blog/[slug]/+page.server.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function getPost(slug: string): Promise<{ title: string, content: string }>
 }
 
 // @filename: index.js
 // ---cut---
-import * as db from '#lib/server/database';
+import * as db from '#lib/server/database.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params }) {
@@ -76,13 +76,13 @@ export async function load({ params }) {
 ```js
 /// file: src/routes/blog/[slug]/+layout.server.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function getPostSummaries(): Promise<Array<{ title: string, slug: string }>>
 }
 
 // @filename: index.js
 // ---cut---
-import * as db from '#lib/server/database';
+import * as db from '#lib/server/database.js';
 
 /** @type {import('./$types').LayoutServerLoad} */
 export async function load() {
@@ -194,7 +194,7 @@ export async function load() {
 
 通用和服务器 `load` 函数都可以访问描述请求的属性（`params`、`route` 和 `url`）以及各种函数（`fetch`、`setHeaders`、`parent`、`depends` 和 `untrack`）。这些将在以下小节中描述。
 
-服务器 `load` 函数使用 `ServerLoadEvent` 调用，它从 `RequestEvent` 继承了 `clientAddress`、`cookies`、`locals`、`platform` 和 `request`。
+服务器 `load` 函数使用 `ServerLoadEvent` 调用，它从 `RequestEvent` 继承了 `cookies`、`getClientAddress`、`locals`、`platform` 和 `request`。
 
 通用 `load` 函数使用 `LoadEvent` 调用，它有一个 `data` 属性。如果你在 `+page.js` 和 `+page.server.js`（或 `+layout.js` 和 `+layout.server.js`）中都有 `load` 函数，那么服务器 `load` 函数的返回值就是通用 `load` 函数参数的 `data` 属性。
 
@@ -202,7 +202,7 @@ export async function load() {
 
 通用 `load` 函数可以返回一个包含任意值的对象，包括自定义类和组件构造函数之类的东西。
 
-服务器 `load` 函数必须返回可以使用 [devalue](https://github.com/rich-harris/devalue) 序列化的数据——任何可以表示为 JSON 的东西，加上像 `BigInt`、`Date`、`Map`、`Set` 和 `RegExp` 这样的东西，或者重复/循环引用——以便它可以通过网络传输。你的数据可以包含[带有 promise 的流式传输](#Streaming-with-promises)，在这种情况下它将被流式传输到浏览器。如果你需要序列化/反序列化自定义类型，请使用[传输钩子](hooks#Universal-hooks-transport)。
+服务器 `load` 函数必须返回可以使用 [devalue](https://github.com/rich-harris/devalue) 序列化的数据——任何可以表示为 JSON 的东西，加上像 `BigInt`、`Date`、`Map`、`Set` 和 `RegExp` 这样的东西，或者重复/循环引用——以便它可以通过网络传输。你的数据可以包含[带有 promise 的流式传输](#Streaming-with-promises)，在这种情况下它将被流式传输到浏览器。如果你需要序列化/反序列化自定义类型，请使用[传输钩子](hooks#transport)。
 
 ### 何时使用哪个
 
@@ -276,7 +276,7 @@ export function load({ route }) {
 - 它可以用于在服务器上发起带凭据的请求，因为它继承了页面请求的 `cookie` 和 `authorization` 头。
 - 它可以在服务器上发起相对请求（通常，`fetch` 在服务器上下文中使用时需要一个带有 origin 的 URL）。
 - 内部请求（例如针对 `+server.js` 路由）在服务器上运行时会直接转到处理程序函数，而无需 HTTP 调用的开销。
-- 在服务器端渲染期间，响应将被捕获并内联到渲染的 HTML 中，方法是挂钩到 `Response` 对象的 `text`、`json` 和 `arrayBuffer` 方法。请注意，除非通过 [`filterSerializedResponseHeaders`](hooks#Server-hooks-handle) 显式包含，否则头_不会_被序列化。
+- 在服务器端渲染期间，响应将被捕获并内联到渲染的 HTML 中，方法是挂钩到 `Response` 对象的 `text`、`json` 和 `arrayBuffer` 方法。请注意，除非通过 [`filterSerializedResponseHeaders`](hooks#handle) 显式包含，否则头_不会_被序列化。
 - 在 hydration 期间，响应将从 HTML 中读取，保证一致性并防止额外的网络请求——如果你在使用浏览器 `fetch` 而不是 `load` `fetch` 时在浏览器控制台收到警告，原因就在于此。
 
 ```js
@@ -297,13 +297,13 @@ export async function load({ fetch, params }) {
 ```js
 /// file: src/routes/+layout.server.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function getUser(sessionid: string | undefined): Promise<{ name: string, avatar: string }>
 }
 
 // @filename: index.js
 // ---cut---
-import * as db from '#lib/server/database';
+import * as db from '#lib/server/database.js';
 
 /** @type {import('./$types').LayoutServerLoad} */
 export async function load({ cookies }) {
@@ -323,7 +323,7 @@ export async function load({ cookies }) {
 - api.domain.com 将_不会_收到 cookie
 - sub.my.domain.com 将收到 cookie
 
-当设置了 `credentials: 'include'` 时，其他 cookie 也不会被传递，因为 SvelteKit 不知道哪个 cookie 属于哪个域（浏览器不会传递此信息），所以转发它们中的任何一个都不安全。请使用 [handleFetch 钩子](hooks#Server-hooks-handleFetch) 来解决此问题。
+当设置了 `credentials: 'include'` 时，其他 cookie 也不会被传递，因为 SvelteKit 不知道哪个 cookie 属于哪个域（浏览器不会传递此信息），所以转发它们中的任何一个都不安全。请使用 [handleFetch 钩子](hooks#handleFetch) 来解决此问题。
 
 ## Headers
 
@@ -421,7 +421,7 @@ export async function load({ params, parent }) {
 
 ## 错误
 
-如果在 `load` 期间抛出了错误，将渲染最近的 [`+error.svelte`](routing#error)。对于[_预期_](errors#Expected-errors) 的错误，请使用来自 `@sveltejs/kit` 的 `error` 辅助函数来指定 HTTP 状态码和可选的消息：
+如果在 `load` 期间抛出了错误，将渲染最近的 [`+error.svelte`](routing#error)。对于[应用错误（app errors）](errors#App-errors)，请使用来自 `@sveltejs/kit` 的 `error` 辅助函数来指定 HTTP 状态码和可选的消息：
 
 ```js
 /// file: src/routes/admin/+layout.server.js
@@ -453,7 +453,7 @@ export function load({ locals }) {
 
 调用 `error(...)` 会抛出一个异常，使得从辅助函数内部轻松停止执行变得容易。
 
-如果抛出了[_意外_](errors#Unexpected-errors) 错误，SvelteKit 将调用 [`handleError`](hooks#Shared-hooks-handleError) 并将其视为 500 内部错误。
+每个错误都会传递给 [`handleError`](hooks#handleError) 钩子。[未知错误](errors#Unknown-errors) 会被视为 500 内部错误，除非该钩子另有说明。
 
 > [!NOTE] [在 SvelteKit 1.x 中](migrating-to-sveltekit-2#redirect-and-error-are-no-longer-thrown-by-you)，你必须自己 `throw` 错误
 
@@ -578,13 +578,13 @@ SvelteKit 跟踪每个 `load` 函数的依赖关系，以避免在导航期间�
 ```js
 /// file: src/routes/blog/[slug]/+page.server.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function getPost(slug: string): Promise<{ title: string, content: string }>
 }
 
 // @filename: index.js
 // ---cut---
-import * as db from '#lib/server/database';
+import * as db from '#lib/server/database.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params }) {
@@ -597,13 +597,13 @@ export async function load({ params }) {
 ```js
 /// file: src/routes/blog/[slug]/+layout.server.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function getPostSummaries(): Promise<Array<{ title: string, slug: string }>>
 }
 
 // @filename: index.js
 // ---cut---
-import * as db from '#lib/server/database';
+import * as db from '#lib/server/database.js';
 
 /** @type {import('./$types').LayoutServerLoad} */
 export async function load() {
@@ -689,7 +689,7 @@ export async function load({ fetch, depends }) {
 - 它引用了一个值已改变的 `url` 属性（如 `url.pathname` 或 `url.search`）。`request.url` 中的属性_不会_被跟踪
 - 它调用了 `url.searchParams.get(...)`、`url.searchParams.getAll(...)` 或 `url.searchParams.has(...)`，并且相关的参数发生了变化。访问 `url.searchParams` 的其他属性将产生与访问 `url.search` 相同的效果。
 - 它调用了 `await parent()` 且父级 `load` 函数重新运行了
-- 一个子级 `load` 函数调用了 `await parent()` 且正在重新运行，并且父级是服务器 `load` 函数
+- 一个子级服务器 `load` 函数调用了 `await parent()` 且正在重新运行，并且父级也是服务器 `load` 函数。调用 `await parent()` 的通用 `load` 函数则会复用父级已有的数据
 - 它通过 [`fetch`](#Making-fetch-requests)（仅通用 load）或 [`depends`](@sveltejs-kit#LoadEvent) 声明了对特定 URL 的依赖，并且该 URL 已被 [`invalidate(url)`]($app-navigation#invalidate) 标记为失效
 - 所有活动的 `load` 函数都被 [`refreshAll()`]($app-navigation#refreshAll) 强制重新运行
 
@@ -706,7 +706,7 @@ export async function load({ fetch, depends }) {
 有几种可能的策略来确保受保护的代码之前会发生身份验证检查。
 
 为了阻止数据瀑布流并保留布局 `load` 缓存：
-- 在任何 `load` 函数运行之前，使用[钩子](hooks) 保护多个路由
+- 在任何 `load` 函数运行之前，使用 [`handle`](auth#Integration-points-Protecting-multiple-routes) 钩子来保护多个路由
 - 在 `+page.server.js` 的 `load` 函数中直接使用身份验证守卫进行路由特定的保护
 
 将身份验证守卫放在 `+layout.server.js` 中，要求所有子页面在受保护的代码之前调用 `await parent()`。除非每个子页面都依赖于从 `await parent()` 返回的数据，否则其他选项的性能会更好。
@@ -756,7 +756,7 @@ export function requireLogin() {
 /// file: +page.server.js
 // @filename: ambient.d.ts
 
-declare module '#lib/server/auth' {
+declare module '#lib/server/auth.js' {
 	interface User {
 		name: string;
 	}
@@ -766,7 +766,7 @@ declare module '#lib/server/auth' {
 
 // @filename: index.ts
 // ---cut---
-import { requireLogin } from '#lib/server/auth';
+import { requireLogin } from '#lib/server/auth.js';
 
 export function load() {
 	const user = requireLogin();

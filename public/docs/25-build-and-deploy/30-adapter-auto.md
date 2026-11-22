@@ -4,7 +4,8 @@ title: 零配置部署
 
 当你使用 `npx sv create` 创建一个新的 SvelteKit 项目时，它会默认安装 [`adapter-auto`](https://github.com/sveltejs/kit/tree/main/packages/adapter-auto)。当你部署时，这个适配器会自动安装并使用适用于受支持环境的正确适配器：
 
-- 用于 [Cloudflare Pages](https://developers.cloudflare.com/pages/) 的 [`@sveltejs/adapter-cloudflare`](adapter-cloudflare)
+- 用于 [Cloudflare Workers](https://www.cloudflare.com/products/workers/) 的 [`@sveltejs/adapter-cloudflare`](adapter-cloudflare)
+- 用于 [Render](https://render.com) 的 [`@sveltejs/adapter-node`](adapter-node)
 - 用于 [Netlify](https://netlify.com/) 的 [`@sveltejs/adapter-netlify`](adapter-netlify)
 - 用于 [Vercel](https://vercel.com/) 的 [`@sveltejs/adapter-vercel`](adapter-vercel)
 - 用于 [Azure Static Web Apps](https://docs.microsoft.com/en-us/azure/static-web-apps/) 的 [`svelte-adapter-azure-swa`](https://github.com/geoffrich/svelte-adapter-azure-swa)

@@ -41,7 +41,7 @@ export default defineConfig({
 
 在某些主机上，它可能完全是另一个名字——请参阅你平台的文档。我们建议尽可能避免使用 `index.html`，因为它可能与预渲染冲突。
 
-> [!NOTE] 请注意，无论 [`paths.relative`](configuration#paths) 的值如何，回退页面将始终包含绝对资源路径（即以 `/` 而不是 `.` 开头），因为它用于响应对任意路径的请求。
+> [!NOTE] 请注意，无论 [`paths.relative`](@sveltejs-kit-vite#paths) 的值如何，回退页面将始终包含绝对资源路径（即以 `/` 而不是 `.` 开头），因为它用于响应对任意路径的请求。
 
 ## 预渲染单个页面
 

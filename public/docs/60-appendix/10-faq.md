@@ -6,6 +6,14 @@ title: 常见问题
 
 也请参阅[ Svelte FAQ](../svelte/faq) 和 [`vite-plugin-svelte` FAQ](https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md) 以获取来自这些库的相关问题解答。
 
+## SvelteKit 支持哪些浏览器？
+
+SvelteKit 的客户端运行时针对与 [Vite 默认 `build.target`](https://vite.dev/config/build-options#build-target) 相同的浏览器，即 `'baseline-widely-available'`。在 Vite 8 中，这意味着 Chrome 111、Edge 111、Firefox 114 和 Safari 16.4 或更高版本。
+
+客户端运行时不包含 polyfill。设置更低的 `build.target` 只会改变语法转换方式——它不会添加缺失的 API——因此如果你需要支持更旧的浏览器，你需要自己添加 polyfill，例如使用 [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy)。
+
+[Service worker](service-workers) 以 `type: 'module'` 注册，因此不支持模块 service worker 的浏览器不会注册它们。
+
 ## 我可以用 SvelteKit 制作什么？
 
 更多细节请参阅[关于项目类型的文档](project-types)。
@@ -133,7 +141,7 @@ onMount(() => {
 
 ## 我该如何使用不同的后端 API 服务器？
 
-你可以使用 [`event.fetch`](./load#Making-fetch-requests) 从外部 API 服务器请求数据，但要注意你需要处理 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)，这会导致诸如通常需要预检（preflight）请求从而导致更高延迟等复杂情况。对单独子域的请求也可能因额外的 DNS 查找、TLS 设置等而增加延迟。如果你想使用这种方法，你可能会发现 [`handleFetch`](./hooks#Server-hooks-handleFetch) 很有帮助。
+你可以使用 [`event.fetch`](./load#Making-fetch-requests) 从外部 API 服务器请求数据，但要注意你需要处理 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)，这会导致诸如通常需要预检（preflight）请求从而导致更高延迟等复杂情况。对单独子域的请求也可能因额外的 DNS 查找、TLS 设置等而增加延迟。如果你想使用这种方法，你可能会发现 [`handleFetch`](./hooks#handleFetch) 很有帮助。
 
 另一种方法是设置一个代理来绕过 CORS 的麻烦。在生产环境中，你会将像 `/api` 这样的路径重写到 API 服务器；对于本地开发，请使用 Vite 的 [`server.proxy`](https://vitejs.dev/config/server-options.html#server-proxy) 选项。
 

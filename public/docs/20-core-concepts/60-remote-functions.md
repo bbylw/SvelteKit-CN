@@ -35,7 +35,7 @@ export default defineConfig({
 
 ## 概述
 
-远程函数从 `.remote.js` 或 `.remote.ts` 文件导出，有四种类型：`query`、`form`、`command` 和 `prerender`。在客户端，导出的函数被转换为 `fetch` 包装器，通过生成的 HTTP 端点调用它们在服务器上的对应函数。远程文件可以放在你 `src` 目录中的任何地方（除了 `src/lib/server` 目录内部），第三方库也可以提供它们。
+远程函数从_远程模块（remote module）_导出，即文件名中包含 `remote` 段落的文件（例如 `remote.ts` 或 `data.remote.ts`）。它们有四种类型：`query`、`form`、`command` 和 `prerender`。在客户端，导出的函数被转换为 `fetch` 包装器，通过生成的 HTTP 端点调用它们在服务器上的对应函数。远程模块可以放在你 `src` 目录中的任何地方（除了 `server` 目录内部——这里的文件[不能被导入到客户端代码中](server-only-modules)），在 `peerDependencies` 中列出 `@sveltejs/kit` 的第三方库也可以提供它们。
 
 ## query
 
@@ -46,13 +46,13 @@ export default defineConfig({
 ```js
 /// file: src/routes/blog/data.remote.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function sql(strings: TemplateStringsArray, ...values: any[]): Promise<any[]>;
 }
 // @filename: index.js
 // ---cut---
 import { query } from '$app/server';
-import * as db from '#lib/server/database';
+import * as db from '#lib/server/database.js';
 
 export const getPosts = query(async () => {
 	const posts = await db.sql`
@@ -66,7 +66,7 @@ export const getPosts = query(async () => {
 });
 ```
 
-> [!NOTE] 在本页中，你会看到像 `#lib/server/database` 和 `#lib/server/auth` 这样来自虚构模块的导入。它们纯粹是为了说明目的——你可以使用任何你喜欢的数据库客户端和身份验证设置。
+> [!NOTE] 在本页中，你会看到像 `#lib/server/database.js` 和 `#lib/server/auth.js` 这样来自虚构模块的导入。它们纯粹是为了说明目的——你可以使用任何你喜欢的数据库客户端和身份验证设置。
 >
 > 上面的 `db.sql` 函数是一个[标签模板函数](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates)，它会转义任何被插值的值。
 
@@ -81,7 +81,7 @@ export const getPosts = query(async () => {
 <h1>最新文章</h1>
 
 <ul>
-	{#each await getPosts() as { title, slug }}
+	{#each await getPosts() as { title, slug } (slug)}
 		<li><a href="/blog/{slug}">{title}</a></li>
 	{/each}
 </ul>
@@ -107,7 +107,7 @@ export const getPosts = query(async () => {
 	<p>加载中...</p>
 {:else}
 	<ul>
-		{#each query.current as { title, slug }}
+		{#each query.current as { title, slug } (slug)}
 			<li><a href="/blog/{slug}">{title}</a></li>
 		{/each}
 	</ul>
@@ -139,7 +139,7 @@ export const getPosts = query(async () => {
 ```js
 /// file: src/routes/blog/data.remote.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function sql(strings: TemplateStringsArray, ...values: any[]): Promise<any[]>;
 }
 // @filename: index.js
@@ -147,7 +147,7 @@ declare module '#lib/server/database' {
 import * as v from 'valibot';
 import { error } from '@sveltejs/kit';
 import { query } from '$app/server';
-import * as db from '#lib/server/database';
+import * as db from '#lib/server/database.js';
 
 export const getPosts = query(async () => { /* ... */ });
 
@@ -162,7 +162,7 @@ export const getPost = query(v.string(), async (slug) => {
 });
 ```
 
-参数和返回值都使用 [devalue](https://github.com/sveltejs/devalue) 进行序列化，它除了 JSON 之外还处理像 `Date` 和 `Map`（以及在你[传输钩子](hooks#Universal-hooks-transport) 中定义的自定义类型）这样的类型。
+参数和返回值都使用 [devalue](https://github.com/sveltejs/devalue) 进行序列化，它除了 JSON 之外还处理像 `Date` 和 `Map`（以及在你[传输钩子](hooks#transport) 中定义的自定义类型）这样的类型。
 
 > [!NOTE] 对于 `query` 和 `prerender` 的参数（但不是返回值），对象、映射和集合会被排序，以便具有相同成员的不同实例产生相同的缓存键。例如，`getPosts({ limit: 10, offset: 10 })` 和 `getPosts({ offset: 10, limit: 10 })` 将产生相同的缓存键。如果顺序对你很重要，你必须使用数组。
 
@@ -211,14 +211,14 @@ export const getPost = query(v.string(), async (slug) => {
 ```js
 /// file: weather.remote.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function sql(strings: TemplateStringsArray, ...values: any[]): Promise<any[]>;
 }
 // @filename: index.js
 // ---cut---
 import * as v from 'valibot';
 import { query } from '$app/server';
-import * as db from '#lib/server/database';
+import * as db from '#lib/server/database.js';
 
 export const getWeather = query.batch(v.string(), async (cityIds) => {
 	const weather = await db.sql`
@@ -243,7 +243,7 @@ export const getWeather = query.batch(v.string(), async (cityIds) => {
 
 <h2>天气</h2>
 
-{#each cities.slice(0, limit) as city}
+{#each cities.slice(0, limit) as city (city.id)}
 	<h3>{city.name}</h3>
 	<CityWeather weather={await getWeather(city.id)} />
 {/each}
@@ -296,7 +296,7 @@ export const getTime = query.live(async function* () {
 
 ```js
 // @filename: time.remote.ts
-import { RemoteLiveQueryFunction } from '@sveltejs/kit';
+import type { RemoteLiveQueryFunction } from '$app/server';
 export declare const getTime: RemoteLiveQueryFunction<undefined, Date>;
 // @errors: 2304
 // @filename: index.js
@@ -323,11 +323,11 @@ async function logTimes() {
 ```ts
 /// file: src/routes/blog/data.remote.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function sql(strings: TemplateStringsArray, ...values: any[]): Promise<any[]>;
 }
 
-declare module '#lib/server/auth' {
+declare module '#lib/server/auth.js' {
 	interface User {
 		name: string;
 	}
@@ -342,8 +342,8 @@ declare module '#lib/server/auth' {
 import * as v from 'valibot';
 import { error, redirect } from '@sveltejs/kit';
 import { query, form } from '$app/server';
-import * as db from '#lib/server/database';
-import * as auth from '#lib/server/auth';
+import * as db from '#lib/server/database.js';
+import * as auth from '#lib/server/auth.js';
 
 export const getPosts = query(async () => { /* ... */ });
 
@@ -416,7 +416,7 @@ export const createPost = form(
 
 这些属性让 SvelteKit 能够设置正确的输入类型、设置一个用于构造传给处理程序的 `data` 的 `name`、填充表单的 `value`（例如在提交失败后，以节省用户重新输入所有内容），并设置 [`aria-invalid`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-invalid) 状态。
 
-向 `.as(...)` 传入第二个参数在从现有数据渲染表单时很有用，例如编辑表单或使用 [`for(...)`](#form-Multiple-instances-of-a-form) 创建的多个实例。除了在元素渲染时设置其值外，它还控制着表单重置时元素的值。`radio`、`submit` 和 `hidden` 输入始终需要这个值，`checkbox` 输入在表示数组字段中的一个选项时也需要它。`file` 输入不能以这种方式填充。
+向 `.as(...)` 传入第二个参数在从现有数据渲染表单时很有用，例如编辑表单或使用 [`for(...)`](#form-Multiple-instances-of-a-form) 创建的多个实例。除了在元素渲染时设置其值外，它还控制着表单重置时元素的值。`radio`、`submit` 和 `hidden` 输入始终需要这个值，`checkbox` 输入在表示数组字段中的一个选项时也需要它。对于这些 `radio` 和 `checkbox` 输入，第二个参数标识选项，因此它当前是否被勾选要放在第三个参数中，例如 `.as('radio', option, settings.visibility === option)` 或 `.as('checkbox', tag, settings.tags.includes(tag))`。`file` 输入不能以这种方式填充。
 
 > [!NOTE] 生成的 `name` 属性使用 JS 对象表示法（例如 `nested.array[0].value`）。需要引号的字符串键（如 `object['nested-array'][0].value`）不受支持。在底层，布尔型 checkbox 和数字字段名分别以 `b:` 和 `n:` 为前缀，以提示 SvelteKit 在校验前将值从字符串强制转换。
 
@@ -477,7 +477,7 @@ export const createProfile = form(datingProfile, (data) => { /* ... */ });
 
 因为我们的表单包含一个 `file` 输入，我们添加了 `enctype="multipart/form-data"` 属性。`info.height` 和 `info.likesDogs` 的值分别被强制转换为数字和布尔值。
 
-> [!NOTE] 如果一个 `checkbox` 输入未被勾选，它的值不会包含在高亮 SvelteKit 从中构造数据的 [`FormData`](https://developer.mozilla.org/en-US/docs/Web/API/FormData) 对象中。因此，我们必须在 schema 中将该值设为可选。在 Valibot 中，这意味着使用 `v.optional(v.boolean(), false)` 而不是仅用 `v.boolean()`；而在 Zod 中，则意味着使用 `z.coerce.boolean<boolean>()`。
+> [!NOTE] 如果一个 `checkbox` 输入未被勾选，它的值不会包含在高亮 SvelteKit 从中构造数据的 [`FormData`](https://developer.mozilla.org/en-US/docs/Web/API/FormData) 对象中。因此，我们必须在 schema 中为该值提供默认值 `false`，而不是仅仅将其标记为可选。在 Valibot 中，这意味着使用 `v.optional(v.boolean(), false)` 而不是仅用 `v.boolean()`；而在 Zod 中，则意味着使用 `z.boolean().default(false)` 而不是仅用 `z.boolean()`。
 
 在属于同一个字段的 `radio` 和 `checkbox` 输入的情况下，`value` 必须作为 `.as(...)` 的第二个参数指定：
 
@@ -568,7 +568,7 @@ export const survey = form(
 // @errors: 18046
 /// file: src/routes/shop/data.remote.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function buy(qty: number): Promise<void>
 }
 // @filename: index.js
@@ -576,7 +576,7 @@ declare module '#lib/server/database' {
 import * as v from 'valibot';
 import { invalid } from '@sveltejs/kit';
 import { form } from '$app/server';
-import * as db from '#lib/server/database';
+import * as db from '#lib/server/database.js';
 
 export const buyHotcakes = form(
 	v.object({
@@ -639,7 +639,7 @@ export const buyHotcakes = form(
 </form>
 ```
 
-默认情况下，如果问题属于尚未交互过的表单控件，它们将被忽略。要校验_所有_输入，请调用 `validate({ includeUntouched: true })`。
+默认情况下，如果问题属于尚未交互过的表单控件，它们将被忽略。要校验_所有_输入，请调用 `validate({ all: true })`。
 
 对于客户端校验，你可以指定一个_预检_（preflight）schema，如果数据未通过校验，它将填充 `issues()` 并阻止数据被发送到服务器：
 
@@ -739,11 +739,11 @@ export const buyHotcakes = form(
 ```ts
 /// file: src/routes/blog/data.remote.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function sql(strings: TemplateStringsArray, ...values: any[]): Promise<any[]>;
 }
 
-declare module '#lib/server/auth' {
+declare module '#lib/server/auth.js' {
 	interface User {
 		name: string;
 	}
@@ -757,8 +757,8 @@ declare module '#lib/server/auth' {
 import * as v from 'valibot';
 import { error, redirect } from '@sveltejs/kit';
 import { query, form } from '$app/server';
-import * as db from '#lib/server/database';
-import * as auth from '#lib/server/auth';
+import * as db from '#lib/server/database.js';
+import * as auth from '#lib/server/auth.js';
 
 export const getPosts = query(async () => { /* ... */ });
 
@@ -806,7 +806,7 @@ export const createPost = form(
 <!--- file: src/routes/blog/new/+page.svelte --->
 <script>
 	import { createPost } from '../data.remote';
-	import { showToast } from '#lib/toast';
+	import { showToast } from '#lib/toast.js';
 </script>
 
 <h1>创建新文章</h1>
@@ -846,8 +846,8 @@ export const createPost = form(
 
 <h1>待办事项</h1>
 
-{#each await getTodos() as todo}
-	{@const modify = modifyTodo.for(todo.id)}
+{#each await getTodos() as todo (todo.id)}
+	{const modify = modifyTodo.for(todo.id)}
 	<form {...modify}>
 		<input {...modify.fields.description.as('text', todo.description)} />
 		<button disabled={!!modify.pending}>保存更改</button>
@@ -917,14 +917,14 @@ export const loginOrRegister = form(
 ```ts
 /// file: likes.remote.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function sql(strings: TemplateStringsArray, ...values: any[]): Promise<any[]>;
 }
 // @filename: index.js
 // ---cut---
 import * as v from 'valibot';
 import { query, command } from '$app/server';
-import * as db from '#lib/server/database';
+import * as db from '#lib/server/database.js';
 
 export const getLikes = query(v.string(), async (id) => {
 	const [row] = await db.sql`
@@ -951,7 +951,7 @@ export const addLike = command(v.string(), async (id) => {
 <!--- file: +page.svelte --->
 <script>
 	import { getLikes, addLike } from './likes.remote';
-	import { showToast } from '#lib/toast';
+	import { showToast } from '#lib/toast.js';
 
 	let { item } = $props();
 </script>
@@ -1027,6 +1027,8 @@ export const updatePost = form(
 
 因为查询是基于它们的参数来键控的，服务器上的 `getPost(post.id).set(result)` 知道去查找客户端上匹配的 `getPost(id)` 来更新它。`getPosts().refresh()` 也是如此——它知道去查找客户端上不带参数的 `getPosts()`。
 
+在 `form` 处理程序的任意位置调用 `refresh()`、`set()` 或 `reconnect()`，会取代该次提交对查询和 `load` 函数的默认全部失效行为，因此只有你刷新的查询会更新。
+
 ### 在变更中重连实时查询
 
 单程变更也可以重连 `query.live` 实例。在 `form`/`command` 处理程序中，对你想要重连的实时查询资源调用 `.reconnect()`：
@@ -1057,7 +1059,7 @@ export const markAllRead = form(v.object({ userId: v.string() }), async ({ userI
 SvelteKit 通过允许客户端_请求_服务器使用 `submit().updates`（对于 `form`）或 `myCommand().updates`（对于 `command`）来更新特定数据，使这变得容易：
 
 ```ts
-import type { RemoteQueryUpdate, RemoteQuery } from '@sveltejs/kit';
+import type { RemoteQueryUpdate, RemoteQuery } from '$app/server';
 interface Post {}
 declare function submit(): Promise<any> & {
 	updates(...updates: RemoteQueryUpdate[]): Promise<any>;
@@ -1105,14 +1107,34 @@ export const createPost = form(
 );
 ```
 
-`requested` 让你访问客户端请求刷新的查询。每个条目都是一个 `{ arg, query }` 对象：`arg` 是查询的实现函数接收到的值——即 schema 校验后（并在适用时转换后）的参数——而 `query` 是一个已经绑定到客户端原始缓存键的 `RemoteQuery`，因此调用 `query.refresh()` / `query.set(...)` 会更新正确的客户端实例。如果解析参数失败，那个查询会出错，但整个命令不会失败。`requested` 的第二个参数 `limit` 是它将返回的最大条目数。超过此限制的刷新请求都将失败。
+`requested` 让你访问客户端请求刷新的查询。每个条目都是一个 `{ arg, query, ignore }` 对象：`arg` 是查询的实现函数接收到的值——即 schema 校验后（并在适用时转换后）的参数——而 `query` 是一个已经绑定到客户端原始缓存键的 `RemoteQuery`，因此调用 `query.refresh()` / `query.set(...)` 会更新正确的客户端实例。如果你有意不想更新某个实例，请调用 `ignore()`：
+
+```js
+import { requested, query } from '$app/server';
+
+export const getPosts = query('unchecked', ({ filter }) => {
+	return ['foo', 'bar'];
+});
+// ---cut---
+for (const { arg, query, ignore } of requested(getPosts, 10)) {
+	if (arg.filter === 'author:santa') {
+		void query.refresh();
+	} else {
+		ignore();
+	}
+}
+```
+
+每个被请求的更新都必须被刷新、设置、重连（对于实时查询）或显式忽略。否则，对应的查询会在客户端进入错误状态。如果解析或校验参数失败，那个查询也会出错，但整个命令不会失败。
+
+`requested` 的第二个参数 `limit` 是它将返回的最大条目数。超过此限制的刷新请求将在客户端失败。
 
 > [!NOTE] `limit` 是必需的，因为刷新请求列表由客户端控制——每个条目都会使服务器校验一个参数并通常会重新获取数据，所以一个无限制的列表是一个拒绝服务风险。选择一个反映你愿意为每个请求处理的最坏情况的限制。如果你已明确决定接受任意数量的刷新，你_可以_传入 `Infinity`，但不推荐这样做。
 
 此外，当你想要做的只是刷新请求的查询实例时，`requested` 允许一个简单的简写：
 
 ```ts
-import type { RemoteQueryFunction } from '@sveltejs/kit';
+import type { RemoteQueryFunction } from '$app/server';
 import { requested } from '$app/server';
 declare const getPosts: RemoteQueryFunction<any, any>;
 // ---cut---
@@ -1132,13 +1154,13 @@ await requested(getPosts, 1).refreshAll();
 ```js
 /// file: src/routes/blog/data.remote.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function sql(strings: TemplateStringsArray, ...values: any[]): Promise<any[]>;
 }
 // @filename: index.js
 // ---cut---
 import { prerender } from '$app/server';
-import * as db from '#lib/server/database';
+import * as db from '#lib/server/database.js';
 
 export const getPosts = prerender(async () => {
 	const posts = await db.sql`
@@ -1154,6 +1176,8 @@ export const getPosts = prerender(async () => {
 
 你可以在其他情况下为动态的页面上使用 `prerender` 函数，从而允许对你的数据进行部分预渲染。这会实现非常快的导航，因为预渲染的数据可以与你的其他静态资源一起存放在 CDN 上。
 
+> [!NOTE] `prerender` 函数不应用于私有数据，因为它们在构建时运行，其结果会作为静态文件公开提供。
+
 在浏览器中，预渲染的数据使用 [`Cache`](https://developer.mozilla.org/en-US/docs/Web/API/Cache) API 保存。这个缓存在页面重新加载后仍然存在，并且会在用户首次访问你应用的新部署时被清除。
 
 ### 预渲染参数
@@ -1163,7 +1187,7 @@ export const getPosts = prerender(async () => {
 ```js
 /// file: src/routes/blog/data.remote.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function sql(strings: TemplateStringsArray, ...values: any[]): Promise<any[]>;
 }
 // @filename: index.js
@@ -1171,7 +1195,7 @@ declare module '#lib/server/database' {
 import * as v from 'valibot';
 import { error } from '@sveltejs/kit';
 import { prerender } from '$app/server';
-import * as db from '#lib/server/database';
+import * as db from '#lib/server/database.js';
 
 export const getPosts = prerender(async () => { /* ... */ });
 
@@ -1236,17 +1260,22 @@ export const getPost = prerender(
 - 函数签名在两次部署之间发生了变化，而一些用户当前正在使用你应用的旧版本
 - 有人试图用糟糕的数据戳你的公开端点来攻击你的站点
 
-在第二种情况下，我们不想给攻击者任何帮助，所以 SvelteKit 会生成一个通用的 [400 Bad Request](https://http.dog/400) 响应。你可以通过实现 [`handleValidationError`](hooks#Server-hooks-handleValidationError) 服务器钩子来控制该消息，它与 [`handleError`](hooks#Shared-hooks-handleError) 一样，必须返回一个 [`App.Error`](errors#Type-safety)（默认为 `{ message: string }`）：
+在第二种情况下，我们不想给攻击者任何帮助，所以 SvelteKit 会生成一个通用的 [400 Bad Request](https://http.dog/400) 响应。校验失败会携带 `kind: 'validation'`、包含 `{ status, message }` 的 `error` 对象以及校验 `issues` 经过服务器端 [`handleError`](hooks#handleError) 钩子。你可以使用这些 issues 记录失败或自定义响应：
 
 ```js
 /// file: src/hooks.server.js
-/** @type {import('@sveltejs/kit').HandleValidationError} */
-export function handleValidationError({ event, issues }) {
-	return {
-		message: '想得美，黑客！'
-	};
+/** @type {import('@sveltejs/kit/hooks').HandleServerError} */
+export function handleError({ kind, issues }) {
+	if (kind === 'validation') {
+		console.error(issues);
+		return {
+			message: '想得美，黑客！'
+		};
+	}
 }
 ```
+
+在暴露校验 issues 时要谨慎，因为它们可能给攻击者提供有用的信息。原样返回 `error` 是安全的——与 `issues` 不同，它只包含通用的状态和消息。
 
 如果你知道自己在做什么并想退出校验，你可以传入字符串 `'unchecked'` 来代替 schema：
 
@@ -1272,14 +1301,14 @@ interface User {
 	avatar: string;
 }
 
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function findUser(sessionId: string | undefined): Promise<User | null>;
 }
 
 // @filename: index.js
 // ---cut---
 import { getRequestEvent, query } from '$app/server';
-import { findUser } from '#lib/server/database';
+import { findUser } from '#lib/server/database.js';
 
 export const getProfile = query(async () => {
 	const user = await getUser();
@@ -1302,7 +1331,85 @@ const getUser = query(async () => {
 请注意，`RequestEvent` 的某些属性在远程函数内部是不同的：
 
 - 你无法设置头（除了写入 cookie，而且仅能在 `form` 和 `command` 函数内部）
-- `route`、`params` 和 `url` 与调用远程函数的页面相关，_而不是_ SvelteKit 为远程函数创建的端点的 URL。绝不要用它们来确定用户是否被授权访问某些数据，因为这些值是请求的一部分，可能被操纵。当用户导航时，查询也不会重新运行（除非导航导致查询的参数发生变化），所以你应当注意如何使用这些值。
+- 在 `query` 函数（包括 `query.batch` 和 `query.live`）内部，访问 `route`、`params` 或 `url` 会抛出错误。查询按参数缓存，并且不会在用户导航时重新运行，因此依赖这些值的结果会在缓存不知情的情况下过期。请改为从页面将这些值作为参数传给查询。你仍然可以在 [`handle`](hooks#handle) 钩子中从 cookie 或请求头派生可信的上下文并放到 `locals` 上，但请注意对于查询请求，`handle` 看到的是远程端点的 URL，而不是页面的 URL
+- 在 `form` 和 `command` 函数中，`route`、`params` 和 `url` 与调用远程函数的页面相关，_而不是_ SvelteKit 为远程函数创建的端点的 URL。绝不要用它们来确定用户是否被授权访问某些数据，因为这些值是请求的一部分，可能被操纵。
+
+## 对身份验证的影响
+
+由于远程函数调用可以来自任何页面，请求事件的 URL 可能被客户端操纵。因此，你_必须_在需要它的远程函数内部直接运行身份验证检查。这个检查可以写成共享的辅助函数：
+
+```js
+/// file: src/lib/server/auth.js
+// @filename: ambient.d.ts
+interface User {
+	id: string;
+	name: string;
+}
+
+declare namespace App {
+	interface Locals {
+		user: User | null;
+	}
+}
+
+// @filename: index.js
+// ---cut---
+import { redirect } from '@sveltejs/kit';
+import { getRequestEvent } from '$app/server';
+
+export function requireLogin() {
+	const { locals } = getRequestEvent();
+
+	if (!locals.user) redirect(303, '/login');
+
+	return locals.user;
+}
+```
+
+现在你可以在任何需要身份验证的远程函数中使用它：
+
+```js
+/// file: src/lib/projects.remote.js
+// @filename: ambient.d.ts
+declare module '#lib/server/auth.js' {
+	export function requireLogin(): { id: string; name: string };
+}
+
+declare module '#lib/server/database.js' {
+	export function getProjects(
+		userId: string
+	): Promise<Array<{ id: string; name: string }>>;
+}
+
+// @filename: index.js
+// ---cut---
+import { query } from '$app/server';
+import { requireLogin } from '#lib/server/auth.js';
+import { getProjects } from '#lib/server/database.js';
+
+export const getMyProjects = query(async () => {
+	const user = requireLogin();
+
+	return await getProjects(user.id);
+});
+```
+
+> [!NOTE] `redirect` 不能在 `command` 函数内部使用，因此 command 应改用 [`error(401)`](@sveltejs-kit#error)。
+
+现在，任何调用 `getMyProjects` 的组件都只有在用户登录时才会被渲染，无论它被哪个页面使用：
+
+```svelte
+<!--- file: src/lib/ProjectList.svelte --->
+<script>
+	import { getMyProjects } from '#lib/projects.remote.js';
+</script>
+
+<ul>
+	{#each await getMyProjects() as project (project.id)}
+		<li><a href="/projects/{project.id}">{project.name}</a></li>
+	{/each}
+</ul>
+```
 
 ## 重定向
 

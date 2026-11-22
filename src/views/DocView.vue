@@ -29,6 +29,7 @@ const pathMap: Record<string, string> = {
   'build-and-deploy/adapters': '../../docs/25-build-and-deploy/20-adapters.md',
   'build-and-deploy/adapter-auto': '../../docs/25-build-and-deploy/30-adapter-auto.md',
   'build-and-deploy/adapter-node': '../../docs/25-build-and-deploy/40-adapter-node.md',
+  'build-and-deploy/adapter-bun': '../../docs/25-build-and-deploy/45-adapter-bun.md',
   'build-and-deploy/adapter-static': '../../docs/25-build-and-deploy/50-adapter-static.md',
   'build-and-deploy/single-page-apps': '../../docs/25-build-and-deploy/55-single-page-apps.md',
   'build-and-deploy/adapter-cloudflare': '../../docs/25-build-and-deploy/60-adapter-cloudflare.md',
@@ -56,40 +57,50 @@ const pathMap: Record<string, string> = {
   'appendix/integrations': '../../docs/60-appendix/20-integrations.md',
   'appendix/debugging': '../../docs/60-appendix/25-debugging.md',
   'appendix/migrating-to-sveltekit-2': '../../docs/60-appendix/30-migrating-to-sveltekit-2.md',
-  'appendix/migrating': '../../docs/60-appendix/40-migrating.md',
+  'appendix/migrating-to-sveltekit-3': '../../docs/60-appendix/35-migrating-to-sveltekit-3.md',
   'appendix/additional-resources': '../../docs/60-appendix/50-additional-resources.md',
   'appendix/glossary': '../../docs/60-appendix/60-glossary.md',
 }
 
 const refMap: Record<string, string> = {
   'reference/sveltejs-kit': '98-reference/10-@sveltejs-kit.md',
+  'reference/sveltejs-kit-adapter': '98-reference/15-@sveltejs-kit-adapter.md',
+  'reference/sveltejs-kit-env': '98-reference/15-@sveltejs-kit-env.md',
   'reference/sveltejs-kit-hooks': '98-reference/15-@sveltejs-kit-hooks.md',
   'reference/sveltejs-kit-node': '98-reference/15-@sveltejs-kit-node.md',
+  'reference/sveltejs-kit-params': '98-reference/15-@sveltejs-kit-params.md',
   'reference/sveltejs-kit-vite': '98-reference/15-@sveltejs-kit-vite.md',
   'reference/app-env': '98-reference/19-$app-env.md',
-  'reference/app-environment': '98-reference/20-$app-environment.md',
+  'reference/app-env-private': '98-reference/20-$app-env-private.md',
+  'reference/app-env-public': '98-reference/20-$app-env-public.md',
   'reference/app-forms': '98-reference/20-$app-forms.md',
+  'reference/app-manifest': '98-reference/20-$app-manifest.md',
   'reference/app-navigation': '98-reference/20-$app-navigation.md',
   'reference/app-paths': '98-reference/20-$app-paths.md',
   'reference/app-server': '98-reference/20-$app-server.md',
+  'reference/app-service-worker': '98-reference/20-$app-service-worker.md',
   'reference/app-state': '98-reference/20-$app-state.md',
-  'reference/app-stores': '98-reference/20-$app-stores.md',
-  'reference/app-types': '98-reference/20-$app-types.md',
-  'reference/env': '98-reference/25-$env-dynamic-private.md',
+  'reference/app-tsconfig': '98-reference/20-$app-tsconfig.md',
+  'reference/app-tsconfig-service-worker': '98-reference/21-$app-tsconfig-service-worker.md',
+  'reference/app-types': '98-reference/22-$app-types.md',
   'reference/lib': '98-reference/26-$lib.md',
-  'reference/service-worker': '98-reference/27-$service-worker.md',
-  'reference/configuration': '98-reference/50-configuration.md',
   'reference/cli': '98-reference/52-cli.md',
   'reference/types': '98-reference/54-types.md',
+  'legacy-reference/service-worker': '99-legacy-reference/10-$service-worker.md',
+  'legacy-reference/app-environment': '99-legacy-reference/20-$app-environment.md',
+  'legacy-reference/app-stores': '99-legacy-reference/20-$app-stores.md',
+  'legacy-reference/env-dynamic-private': '99-legacy-reference/25-$env-dynamic-private.md',
+  'legacy-reference/env-dynamic-public': '99-legacy-reference/25-$env-dynamic-public.md',
+  'legacy-reference/env-static-private': '99-legacy-reference/25-$env-static-private.md',
+  'legacy-reference/env-static-public': '99-legacy-reference/25-$env-static-public.md',
 }
 
 const getFilePath = (path: string): string => {
   const docPath = path.replace(/^\//, '')
   const mapped = pathMap[docPath]
   if (mapped) return mapped
-  if (docPath.startsWith('reference/')) {
-    const refPath = docPath.replace('reference/', '')
-    return '../../docs/' + (refMap[refPath] || '')
+  if (docPath.startsWith('reference/') || docPath.startsWith('legacy-reference/')) {
+    return '../../docs/' + (refMap[docPath] || '')
   }
   return ''
 }

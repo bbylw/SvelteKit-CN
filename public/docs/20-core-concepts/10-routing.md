@@ -8,7 +8,7 @@ SvelteKit 的核心是一个_基于文件系统的路由器_。你应用的路�
 - `src/routes/about` 创建一个 `/about` 路由
 - `src/routes/blog/[slug]` 创建一个带有_参数_ `slug` 的路由，该参数可用于在用户请求像 `/blog/hello-world` 这样的页面时动态加载数据
 
-> [!NOTE] 你可以通过编辑[项目配置](configuration) 将 `src/routes` 改为不同的目录。
+> [!NOTE] 你可以通过编辑[项目配置](@sveltejs-kit-vite) 将 `src/routes` 改为不同的目录。
 
 每个路由目录都包含一个或多个_路由文件_，可以通过它们的 `+` 前缀来识别。
 
@@ -17,6 +17,8 @@ SvelteKit 的核心是一个_基于文件系统的路由器_。你应用的路�
 * 所有文件都可以在服务器上运行
 * 除了 `+server` 文件外，所有文件都在客户端运行
 * `+layout` 和 `+error` 文件既适用于它们所在的目录，也适用于子目录
+
+> [!NOTE] 从页面 A 导航到页面 B 时，SvelteKit 会保留两者共有的组件——更多细节请[参见此处](state-management#Component-and-page-state-is-preserved)。
 
 ## +page
 
@@ -163,7 +165,7 @@ SvelteKit 会 “沿着树向上走”，寻找最接近的错误边界——如
 
 如果找不到任何路由（404），将使用 `src/routes/+error.svelte`（如果该文件不存在，则使用默认错误页面）。
 
-> [!NOTE] 当错误发生在 [`handle`](hooks#Server-hooks-handle) 或 [+server.js](#server) 请求处理程序内部时，_不会_使用 `+error.svelte`。
+> [!NOTE] 当错误发生在 [`handle`](hooks#handle) 或 [+server.js](#server) 请求处理程序内部时，_不会_使用 `+error.svelte`。
 
 你可以在[此处](errors) 了解更多关于错误处理的信息。
 
@@ -291,7 +293,7 @@ export function load() {
 
 ## +server
 
-除了页面，你还可以用 `+server.js` 文件（有时称为 “API 路由” 或 “端点”）定义路由，它让你完全控制响应。你的 `+server.js` 文件导出与 HTTP 动词（如 `GET`、`POST`、`PATCH`、`PUT`、`DELETE`、`OPTIONS` 和 `HEAD`）对应的函数，这些函数接受 [`RequestEvent`](@sveltejs-kit#RequestEvent) 参数并返回一个 [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) 对象。
+除了页面，你还可以用 `+server.js` 文件（有时称为 “API 路由” 或 “端点”）定义路由，它让你完全控制响应。你的 `+server.js` 文件导出与 HTTP 动词（如 `GET`、`POST`、`PATCH`、`PUT`、`DELETE`、`OPTIONS`、`HEAD` 和 `QUERY`）对应的函数，这些函数接受 [`RequestEvent`](@sveltejs-kit#RequestEvent) 参数并返回一个 [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) 对象。
 
 例如，我们可以用一个 `GET` 处理程序创建一个 `/api/random-number` 路由：
 
@@ -318,17 +320,17 @@ export function GET({ url }) {
 
 `Response` 的第一个参数可以是一个 [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream)，使得流式传输大量数据或创建服务器发送事件（server-sent events）成为可能（除非部署到会缓冲响应的平台上，如 AWS Lambda）。
 
-你可以为了方便使用来自 `@sveltejs/kit` 的 [`error`](@sveltejs-kit#error)、[`redirect`](@sveltejs-kit#redirect) 和 [`json`](@sveltejs-kit#json) 方法（但不一定非要用）。
+你可以为了方便使用来自 `@sveltejs/kit` 的 [`error`](@sveltejs-kit#error) 和 [`redirect`](@sveltejs-kit#redirect) 方法（但不一定非要用）。
 
 如果抛出了错误（无论是 `error(...)` 还是意外错误），响应将是该错误的 JSON 表示或回退错误页面——后者可以通过 `src/error.html` 自定义——具体取决于 `Accept` 头。[`+error.svelte`](#error) 组件在这种情况下_不会_被渲染。你可以在[此处](errors) 了解更多关于错误处理的信息。
 
 > [!NOTE] 创建 `OPTIONS` 处理程序时，请注意 Vite 会注入 `Access-Control-Allow-Origin` 和 `Access-Control-Allow-Methods` 头——除非你自行添加，否则这些头在生产环境中不会出现。
 
-> [!NOTE] `+layout` 文件对 `+server.js` 文件没有影响。如果你想在每个请求之前运行某些逻辑，请将其添加到服务器端 [`handle`](hooks#Server-hooks-handle) 钩子中。
+> [!NOTE] `+layout` 文件对 `+server.js` 文件没有影响。如果你想在每个请求之前运行某些逻辑，请将其添加到服务器端 [`handle`](hooks#handle) 钩子中。
 
 ### 接收数据
 
-通过导出 `POST`/`PUT`/`PATCH`/`DELETE`/`OPTIONS`/`HEAD` 处理程序，`+server.js` 文件可用于创建完整的 API：
+通过导出 `POST`/`PUT`/`PATCH`/`DELETE`/`OPTIONS`/`HEAD`/`QUERY` 处理程序，`+server.js` 文件可用于创建完整的 API：
 
 ```svelte
 <!--- file: src/routes/add/+page.svelte --->
@@ -359,12 +361,10 @@ export function GET({ url }) {
 
 ```js
 /// file: src/routes/api/add/+server.js
-import { json } from '@sveltejs/kit';
-
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request }) {
 	const { a, b } = await request.json();
-	return json(a + b);
+	return Response.json(a + b);
 }
 ```
 
@@ -378,18 +378,16 @@ export async function POST({ request }) {
 
 ```js
 /// file: src/routes/api/add/+server.js
-import { json, text } from '@sveltejs/kit';
-
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request }) {
 	const { a, b } = await request.json();
-	return json(a + b);
+	return Response.json(a + b);
 }
 
 // 这个处理程序将响应 PUT、PATCH、DELETE 等。
 /** @type {import('./$types').RequestHandler} */
 export async function fallback({ request }) {
-	return text(`我捕获了你的 ${request.method} 请求！`);
+	return new Response(`我捕获了你的 ${request.method} 请求！`);
 }
 ```
 
@@ -399,7 +397,7 @@ export async function fallback({ request }) {
 
 `+server.js` 文件可以与 `+page` 文件放在同一目录中，允许同一路由既可以是页面也可以是 API 端点。为了确定是哪个，SvelteKit 应用以下规则：
 
-- `PUT`/`PATCH`/`DELETE`/`OPTIONS` 请求总是由 `+server.js` 处理，因为它们不适用于页面
+- `PUT`/`PATCH`/`DELETE`/`OPTIONS`/`QUERY` 请求总是由 `+server.js` 处理，因为它们不适用于页面
 - `GET`/`POST`/`HEAD` 请求，如果 `accept` 头优先 `text/html`（换句话说，是一个浏览器页面请求），则被视为页面请求，否则由 `+server.js` 处理
 - 对 `GET` 请求的响应将包含 `Vary: Accept` 头，以便代理和浏览器分别缓存 HTML 和 JSON 响应
 
@@ -443,6 +441,8 @@ export async function fallback({ request }) {
 ## 其他文件
 
 路由目录中的任何其他文件都会被 SvelteKit 忽略。这意味着你可以将组件和实用模块与需要它们的路由放在一起。
+
+像 +page.test.js、+server.spec.ts 和 +page.stories.svelte 这样的文件也会被忽略，因此测试和 stories 可以与路由文件放在一起。
 
 如果多个路由需要这些组件和模块，最好将它们放在 [`#lib`]($lib) 中。
 

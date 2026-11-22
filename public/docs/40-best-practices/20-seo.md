@@ -8,7 +8,7 @@ SEO 最重要的方面是创造高质量的内容，并被来自网络各处广�
 
 ### SSR
 
-虽然近年来搜索引擎在索引由客户端 JavaScript 渲染的内容方面变得更好了，但服务端渲染的内容被索引得更频繁、更可靠。SvelteKit 默认采用 SSR，虽然你可以在 [`handle`](hooks#Server-hooks-handle) 中禁用它，但除非你有充分的理由，否则应该保持开启。
+虽然近年来搜索引擎在索引由客户端 JavaScript 渲染的内容方面变得更好了，但服务端渲染的内容被索引得更频繁、更可靠。SvelteKit 默认采用 SSR，虽然你可以在 [`handle`](hooks#handle) 中禁用它，但除非你有充分的理由，否则应该保持开启。
 
 > [!NOTE] SvelteKit 的渲染是高度可配置的，如有必要，你可以实现[动态渲染](https://developers.google.com/search/docs/advanced/javascript/dynamic-rendering)。一般不推荐这样做，因为 SSR 除了 SEO 之外还有其他好处。
 
@@ -56,97 +56,3 @@ export async function GET() {
 	);
 }
 ```
-
-### AMP
-
-现代 Web 开发有一个令人遗憾的现实：有时有必要创建你站点的 [Accelerated Mobile Pages (AMP)](https://amp.dev/) 版本。在 SvelteKit 中，这可以通过设置 [`inlineStyleThreshold`](configuration#inlineStyleThreshold) 选项来实现……
-
-```js
-/// file: vite.config.js
-import { defineConfig } from 'vite';
-import { sveltekit } from '@sveltejs/kit/vite';
-
-export default defineConfig({
-	plugins: [
-		sveltekit({
-			// since <link rel="stylesheet"> isn't
-			// allowed, inline all styles
-			inlineStyleThreshold: Infinity
-		})
-	]
-});
-```
-
-……在你的根 `+layout.js`/`+layout.server.js` 中禁用 `csr`……
-
-```js
-/// file: src/routes/+layout.server.js
-export const csr = false;
-```
-
-……在你的 `app.html` 中添加 `amp`
-
-```html
-<html amp>
-...
-```
-
-……并使用从 `@sveltejs/amp` 导入的 `transform` 配合 `transformPageChunk` 来转换 HTML：
-
-```js
-/// file: src/hooks.server.js
-import * as amp from '@sveltejs/amp';
-
-/** @type {import('@sveltejs/kit').Handle} */
-export async function handle({ event, resolve }) {
-	let buffer = '';
-	return await resolve(event, {
-		transformPageChunk: ({ html, done }) => {
-			buffer += html;
-			if (done) return amp.transform(buffer);
-		}
-	});
-}
-```
-
-为了防止因转换页面为 amp 而发送任何未使用的 CSS，我们可以使用 [`dropcss`](https://www.npmjs.com/package/dropcss)：
-
-```js
-// @filename: ambient.d.ts
-declare module 'dropcss';
-
-// @filename: index.js
-// ---cut---
-/// file: src/hooks.server.js
-// @errors: 2307
-import * as amp from '@sveltejs/amp';
-import dropcss from 'dropcss';
-
-/** @type {import('@sveltejs/kit').Handle} */
-export async function handle({ event, resolve }) {
-	let buffer = '';
-
-	return await resolve(event, {
-		transformPageChunk: ({ html, done }) => {
-			buffer += html;
-
-			if (done) {
-				let css = '';
-				const markup = amp
-					.transform(buffer)
-					.replace('⚡', 'amp') // dropcss can't handle this character
-					.replace(/<style amp-custom([^>]*?)>([^]+?)<\/style>/, (match, attributes, contents) => {
-						css = contents;
-						return `<style amp-custom${attributes}></style>`;
-					});
-
-				css = dropcss({ css, html: markup }).css;
-				return markup.replace('</style>', `${css}</style>`);
-			}
-		}
-	});
-}
-
-```
-
-> [!NOTE] 使用 `handle` 钩子通过 `amphtml-validator` 验证转换后的 HTML 是个好主意，但仅当你在预渲染页面时才这样做，因为它非常慢。

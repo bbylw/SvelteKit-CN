@@ -4,9 +4,11 @@ title: Node 服务器
 
 要生成一个独立的 Node 服务器，请使用 [`adapter-node`](https://github.com/sveltejs/kit/tree/main/packages/adapter-node)。
 
+一个快速入门的方法是使用 SvelteKit 的[官方 Railway 模板](https://railway.com/deploy/svelte-kit) 部署一个项目。
+
 ## 用法
 
-用 `npm i -D @sveltejs/adapter-node` 安装，然后将适配器添加到你的 `vite.config.js`：
+运行 [`npx sv add sveltekit-adapter="adapter:node"`](/docs/cli/sveltekit-adapter)，或者用 `npm i -D @sveltejs/adapter-node` 安装，然后将适配器添加到你的 `vite.config.js`：
 
 ```js
 // @errors: 2307 2554
@@ -36,6 +38,8 @@ node build
 
 开发依赖将使用 [Rolldown](https://rolldown.rs/) 打包进你的应用。要控制给定的包是被打包还是外部化，请分别在你的 `package.json` 的 `devDependencies` 或 `dependencies` 中放置它。
 
+客户端资源和预渲染输出会从构建期间记录的文件列表中被提供。
+
 ### 压缩响应
 
 你通常会想要压缩来自服务器的响应。如果你已经将服务器部署在反向代理后面以进行 SSL 或负载均衡，由于 Node.js 是单线程的，在该层处理压缩通常会带来更好的性能。
@@ -46,19 +50,7 @@ node build
 
 在 `dev` 和 `preview` 中，SvelteKit 会从你的 `.env` 文件（或 `.env.local`，或 `.env.[mode]`，[由 Vite 决定](https://vitejs.dev/guide/env-and-mode.html#env-files)）读取环境变量。
 
-在生产环境中，`.env` 文件_不会_被自动加载。要这样做，在你的项目中安装 `dotenv`……
-
-```sh
-npm install dotenv
-```
-
-……并在运行构建好的应用之前调用它：
-
-```sh
-node +++-r dotenv/config+++ build
-```
-
-如果你使用 Node.js v20.6+，你可以改用 [`--env-file`](https://nodejs.org/en/learn/command-line/how-to-read-environment-variables-from-nodejs) 标志：
+在生产环境中，`.env` 文件_不会_被自动加载。要这样做，请在运行构建好的应用时使用 [`--env-file`](https://nodejs.org/en/learn/command-line/how-to-read-environment-variables-from-nodejs) 标志：
 
 ```sh
 node +++--env-file=.env+++ build
@@ -82,7 +74,7 @@ SOCKET_PATH=/tmp/socket node build
 
 HTTP 没有给 SvelteKit 一种可靠的方式来获知当前正在被请求的 URL。默认情况下，SvelteKit 将从请求的 `host` 头（以及 `https` 协议，如果没有设置 `PROTOCOL_HEADER` 的话）派生出源（origin）。
 
-如果你的应用是从一个在请求时未知的源提供的——例如因为它位于一个不传递 `host` 头的反向代理后面，或者因为你想要使用一个与请求的 host 不同的规范源来进行 CSRF 检查——你可以在你的 `vite.config.js` 中设置 [`paths.origin`](configuration#paths) 选项：
+如果你的应用是从一个在请求时未知的源提供的——例如因为它位于一个不传递 `host` 头的反向代理后面，或者因为你想要使用一个与请求的 host 不同的规范源来进行 CSRF 检查——你可以在你的 `vite.config.js` 中设置 [`paths.origin`](@sveltejs-kit-vite#paths) 选项：
 
 ```js
 // @errors: 2307
@@ -96,14 +88,20 @@ export default defineConfig({
 		sveltekit({
 			adapter: adapter(),
 			paths: {
-				origin: process.env.ORIGIN
+				origin: 'https://my.site'
 			}
 		})
 	]
 });
 ```
 
-当 `paths.origin` 未设置（默认）时，`adapter-node` 从请求中派生源——使用 `host` 头（以及 `PROTOCOL_HEADER`/`PORT_HEADER`，如果设置了的话）——并相应地设置 `request.url`。否则，配置的值将被用作表单提交和远程函数调用时 CSRF 检查的受信任自身源，以及预渲染期间 `url.origin` 的值。
+当 `paths.origin` 未设置（默认）时，`adapter-node` 会在运行时使用已设置的 `ORIGIN` 环境变量：
+
+```sh
+ORIGIN=https://my.site node build
+```
+
+否则，它从请求中派生源——使用 `host` 头（以及 `PROTOCOL_HEADER`/`PORT_HEADER`，如果设置了的话）——并相应地设置 `request.url`。否则，配置的值将被用作表单提交和远程函数调用时 CSRF 检查的受信任自身源，以及预渲染期间 `url.origin` 的值。
 
 或者，你可以指定一些告诉 SvelteKit 请求协议和主机的头，从中它可以构造出源 URL：
 
@@ -117,7 +115,7 @@ PROTOCOL_HEADER=x-forwarded-proto HOST_HEADER=x-forwarded-host node build
 
 如果 `adapter-node` 无法正确确定你的部署的 URL，在使用[表单操作](form-actions) 时你可能会遇到这个错误：
 
-> [!NOTE] 禁止跨站 POST 表单提交
+> 禁止跨站 POST 表单提交
 
 ### `ADDRESS_HEADER` 和 `XFF_DEPTH`
 
@@ -147,7 +145,7 @@ ADDRESS_HEADER=True-Client-IP node build
 
 ### `BODY_SIZE_LIMIT`
 
-要接受的最大请求体大小，以字节为单位，包括流式传输期间。请求体大小也可以用单位后缀指定千字节（`K`）、兆字节（`M`）或千兆字节（`G`）。例如，`512K` 或 `1M`。默认为 512kb。你可以用 `Infinity` 的值（旧版本适配器中为 `0`）禁用此选项，并在你需要在更高级的场景时于 [`handle`](hooks#Server-hooks-handle) 中实现自定义检查。
+要接受的最大请求体大小，以字节为单位，包括流式传输期间。请求体大小也可以用单位后缀指定千字节（`K`）、兆字节（`M`）或千兆字节（`G`）。例如，`512K` 或 `1M`。默认为 512kb。你可以用 `Infinity` 的值（旧版本适配器中为 `0`）禁用此选项，并在你需要在更高级的场景时于 [`handle`](hooks#handle) 中实现自定义检查。
 
 ### `SHUTDOWN_TIMEOUT`
 
@@ -192,7 +190,7 @@ export default defineConfig({
 
 ### precompress
 
-启用使用 gzip 和 brotli 对资源和预渲染页面进行预压缩。默认为 `true`。
+在构建期间为客户端和预渲染资源生成 `.br` 和 `.gz` 变体。服务器会针对每个请求协商 `Accept-Encoding`，优先使用 brotli 而非 gzip，并且每个变体都带有自己的 ETag。默认为 `true`。
 
 ### envPrefix
 
@@ -266,7 +264,7 @@ WantedBy=sockets.target
 
 ## 自定义服务器
 
-适配器在你的构建目录中创建两个文件——`index.js` 和 `handler.js`。运行 `index.js`——例如 `node build`，如果你使用默认构建目录——将在配置的端口上启动一个服务器。
+你的构建目录中包含两个入口点，`index.js` 和 `handler.js`。运行 `index.js`——例如 `node build`，如果你使用默认构建目录——将在配置的端口上启动一个服务器。
 
 或者，你可以导入 `handler.js` 文件，它导出一个适用于 [Express](https://github.com/expressjs/express)、[Connect](https://github.com/senchalabs/connect) 或 [Polka](https://github.com/lukeed/polka)（或者甚至只是内置的 [`http.createServer`](https://nodejs.org/dist/latest/docs/api/http.html#httpcreateserveroptions-requestlistener)）的处理程序，并自行搭建你的服务器：
 

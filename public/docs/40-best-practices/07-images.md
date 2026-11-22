@@ -152,7 +152,7 @@ export default defineConfig({
 
 使用内容分发网络（CDN）可以让你动态地优化这些图片，并在尺寸方面提供更大的灵活性，但它可能涉及一些配置开销和使用成本。根据缓存策略，在收到 CDN 返回的 [304 响应](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/304) 之前，浏览器可能无法使用资源的缓存副本。针对 CDN 构建 HTML 允许使用 `<img>` 标签，因为 CDN 可以根据 `User-Agent` 响应头提供合适的格式，而构建时的优化必须生成带有多个来源的 `<picture>` 标签。最后，一些 CDN 可能会懒生成图片，这对于流量低且图片频繁变化的站点可能会产生负面的性能影响。
 
-CDN 通常无需任何库即可使用。不过，有许多支持 Svelte 的库让这件事更简单。[`@unpic/svelte`](https://unpic.pics/img/svelte/) 是一个与 CDN 无关的库，支持大量提供商。你可能还会发现像 [Cloudinary](https://svelte.cloudinary.dev/) 这样的特定 CDN 也有 Svelte 支持。最后，一些支持 Svelte 的内容管理系统（CMS），如 [Contentful](https://www.contentful.com/sveltekit-starter-guide/)、[Storyblok](https://www.storyblok.com/docs/guides/svelte) 和 [Contentstack](https://www.contentstack.com/docs/developers/sample-apps/build-a-starter-website-with-sveltekit-and-contentstack)，都内置了对图片处理的支持。
+CDN 通常无需任何库即可使用。不过，有许多支持 Svelte 的库让这件事更简单。[`@unpic/svelte`](https://unpic.pics/img/svelte/) 是一个与 CDN 无关的库，支持大量提供商。你可能还会发现像 [Cloudinary](https://svelte.cloudinary.dev/) 这样的特定 CDN 也有 Svelte 支持。最后，一些支持 Svelte 的内容管理系统（CMS），如 [Contentful](https://www.contentful.com/sveltekit-starter-guide/)、[Storyblok](https://www.storyblok.com/docs/guides/svelte) 和 [Contentstack](https://www.contentstack.com/docs/headless-cms/sveltekit)，都内置了对图片处理的支持。
 
 ## 最佳实践
 

@@ -119,78 +119,9 @@ load 函数的返回类型随后可以通过 `$types` 模块以 `PageData` 和 `
 > </script>
 > ```
 
-> [!NOTE] 要让这个生效，你自己的 `tsconfig.json` 或 `jsconfig.json` 应该继承自生成的 `.svelte-kit/tsconfig.json`（其中 `.svelte-kit` 是你的 [`outDir`](configuration#outDir)）：
+> [!NOTE] 要让这个生效，你自己的 `tsconfig.json` 或 `jsconfig.json` 应该继承生成的 `$app/types`：
 >
-> `{ "extends": "./.svelte-kit/tsconfig.json" }`
-
-### 默认的 tsconfig.json
-
-生成的 `.svelte-kit/tsconfig.json` 文件包含了一系列选项。其中一些是根据你的项目配置以编程方式生成的，通常不应在没有充分理由的情况下被覆盖：
-
-```json
-/// file: .svelte-kit/tsconfig.json
-{
-	"compilerOptions": {
-		"paths": {
-			"#lib": ["../src/lib/index.js"],
-			"#lib/*": ["../src/lib/*"]
-		},
-		"rootDirs": ["..", "./types"]
-	},
-	"include": [
-		"ambient.d.ts",
-		"non-ambient.d.ts",
-		"./types/**/$types.d.ts",
-		"../vite.config.js",
-		"../vite.config.ts",
-		"../src/**/*.js",
-		"../src/**/*.ts",
-		"../src/**/*.svelte",
-		"../tests/**/*.js",
-		"../tests/**/*.ts",
-		"../tests/**/*.svelte"
-	],
-	"exclude": [
-		"../node_modules/**",
-		"../src/service-worker.js",
-		"../src/service-worker/**/*.js",
-		"../src/service-worker.ts",
-		"../src/service-worker/**/*.ts",
-		"../src/service-worker.d.ts",
-		"../src/service-worker/**/*.d.ts"
-	]
-}
-```
-
-其他的则是 SvelteKit 正常工作所必需的，除非你知道自己在做什么，否则也应该保持不动：
-
-```json
-/// file: .svelte-kit/tsconfig.json
-{
-	"compilerOptions": {
-		// 这确保类型通过 `import type` 显式导入，
-		// 这是必要的，因为 Svelte/Vite 否则无法
-		// 正确编译组件
-		"verbatimModuleSyntax": true,
-
-		// Vite 一次编译一个 TypeScript 模块，
-		// 而不是编译整个模块图
-		"isolatedModules": true,
-
-		// 告诉 TS 它仅用于类型检查
-		"noEmit": true,
-
-		// 这确保 `vite build`
-		// 和 `svelte-package` 都能正确工作
-		"lib": ["esnext", "DOM", "DOM.Iterable"],
-		"moduleResolution": "bundler",
-		"module": "esnext",
-		"target": "esnext"
-	}
-}
-```
-
-使用 `vite.config.js` 中 SvelteKit 插件的 [`typescript.config` 设置](configuration#typescript) 来扩展或修改生成的 `tsconfig.json`。
+> `{ "extends": "$app/tsconfig" }`
 
 ## app.d.ts
 

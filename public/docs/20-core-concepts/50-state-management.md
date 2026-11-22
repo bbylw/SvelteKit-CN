@@ -45,13 +45,13 @@ export const actions = {
 ```js
 /// file: +page.js
 // @filename: ambient.d.ts
-declare module '#lib/user' {
+declare module '#lib/user.js' {
 	export const user: { set: (value: any) => void };
 }
 
 // @filename: index.js
 // ---cut---
-import { user } from '#lib/user';
+import { user } from '#lib/user.js';
 
 /** @type {import('./$types').PageLoad} */
 export async function load({ fetch }) {

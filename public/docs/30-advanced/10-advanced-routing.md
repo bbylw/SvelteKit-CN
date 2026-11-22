@@ -61,7 +61,7 @@ export function load(event) {
 }
 ```
 
-> [!NOTE] 如果你不处理 404 的情况，它们会出现在 [`handleError`](hooks#Shared-hooks-handleError) 中。
+> [!NOTE] 如果你不处理 404 的情况，它们会以 `kind: 'framework'` 作为[框架错误](errors#Framework-errors) 出现在 [`handleError`](hooks#handleError) 中。否则，它们会以 `kind: 'app'` 出现。
 
 ## 可选参数
 
@@ -75,7 +75,7 @@ export function load(event) {
 
 ```js
 /// file: src/params.js
-import { defineParams } from '@sveltejs/kit';
+import { defineParams } from '@sveltejs/kit/params';
 
 export const params = defineParams({
 	fruit: (param) => {
@@ -97,7 +97,7 @@ src/routes/fruits/[page+++=fruit+++]
 
 ```js
 /// file: src/params.js
-import { defineParams } from '@sveltejs/kit';
+import { defineParams } from '@sveltejs/kit/params';
 import * as v from 'valibot';
 
 export const params = defineParams({
@@ -301,12 +301,12 @@ src/routes/
 ```js
 /// file: src/routes/nested/route/+layout.js
 // @filename: ambient.d.ts
-declare module "#lib/reusable-load-function" {
+declare module "#lib/reusable-load-function.js" {
 	export function reusableLoad(event: import('@sveltejs/kit').LoadEvent): Promise<Record<string, any>>;
 }
 // @filename: index.js
 // ---cut---
-import { reusableLoad } from '#lib/reusable-load-function';
+import { reusableLoad } from '#lib/reusable-load-function.js';
 
 /** @type {import('./$types').PageLoad} */
 export function load(event) {

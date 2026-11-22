@@ -8,16 +8,16 @@
 
 | 软件包                                                                      | 更新日志                                                     |
 | --------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [@sveltejs/kit](https://github.com/sveltejs/kit/tree/version-3/packages/kit)                                               | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/kit/CHANGELOG.md)                        |
-| [@sveltejs/adapter-auto](https://github.com/sveltejs/kit/tree/version-3/packages/adapter-auto)                             | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/adapter-auto/CHANGELOG.md)               |
-| [@sveltejs/adapter-cloudflare](https://github.com/sveltejs/kit/tree/version-3/packages/adapter-cloudflare)                 | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/adapter-cloudflare/CHANGELOG.md)         |
-| [@sveltejs/adapter-netlify](https://github.com/sveltejs/kit/tree/version-3/packages/adapter-netlify)                       | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/adapter-netlify/CHANGELOG.md)            |
-| [@sveltejs/adapter-node](https://github.com/sveltejs/kit/tree/version-3/packages/adapter-node)                             | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/adapter-node/CHANGELOG.md)               |
-| [@sveltejs/adapter-static](https://github.com/sveltejs/kit/tree/version-3/packages/adapter-static)                         | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/adapter-static/CHANGELOG.md)             |
-| [@sveltejs/adapter-vercel](https://github.com/sveltejs/kit/tree/version-3/packages/adapter-vercel)                         | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/adapter-vercel/CHANGELOG.md)             |
-| [@sveltejs/amp](https://github.com/sveltejs/kit/tree/version-3/packages/amp)                                               | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/amp/CHANGELOG.md)                        |
-| [@sveltejs/enhanced-img](https://github.com/sveltejs/kit/tree/version-3/packages/enhanced-img)                             | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/enhanced-img/CHANGELOG.md)               |
-| [@sveltejs/package](https://github.com/sveltejs/kit/tree/version-3/packages/package)                                       | [更新日志](https://github.com/sveltejs/kit/blob/version-3/packages/package/CHANGELOG.md)                    |
+| [@sveltejs/kit](https://github.com/sveltejs/kit/tree/main/packages/kit)                                               | [更新日志](https://github.com/sveltejs/kit/blob/main/packages/kit/CHANGELOG.md)                        |
+| [@sveltejs/adapter-auto](https://github.com/sveltejs/kit/tree/main/packages/adapter-auto)                             | [更新日志](https://github.com/sveltejs/kit/blob/main/packages/adapter-auto/CHANGELOG.md)               |
+| [@sveltejs/adapter-cloudflare](https://github.com/sveltejs/kit/tree/main/packages/adapter-cloudflare)                 | [更新日志](https://github.com/sveltejs/kit/blob/main/packages/adapter-cloudflare/CHANGELOG.md)         |
+| [@sveltejs/adapter-netlify](https://github.com/sveltejs/kit/tree/main/packages/adapter-netlify)                       | [更新日志](https://github.com/sveltejs/kit/blob/main/packages/adapter-netlify/CHANGELOG.md)            |
+| [@sveltejs/adapter-node](https://github.com/sveltejs/kit/tree/main/packages/adapter-node)                             | [更新日志](https://github.com/sveltejs/kit/blob/main/packages/adapter-node/CHANGELOG.md)               |
+| [@sveltejs/adapter-static](https://github.com/sveltejs/kit/tree/main/packages/adapter-static)                         | [更新日志](https://github.com/sveltejs/kit/blob/main/packages/adapter-static/CHANGELOG.md)             |
+| [@sveltejs/adapter-vercel](https://github.com/sveltejs/kit/tree/main/packages/adapter-vercel)                         | [更新日志](https://github.com/sveltejs/kit/blob/main/packages/adapter-vercel/CHANGELOG.md)             |
+| [@sveltejs/amp](https://github.com/sveltejs/kit/tree/main/packages/amp)                                               | [更新日志](https://github.com/sveltejs/kit/blob/main/packages/amp/CHANGELOG.md)                        |
+| [@sveltejs/enhanced-img](https://github.com/sveltejs/kit/tree/main/packages/enhanced-img)                             | [更新日志](https://github.com/sveltejs/kit/blob/main/packages/enhanced-img/CHANGELOG.md)               |
+| [@sveltejs/package](https://github.com/sveltejs/kit/tree/main/packages/package)                                       | [更新日志](https://github.com/sveltejs/kit/blob/main/packages/package/CHANGELOG.md)                    |
 
 [更多适配器](https://sveltesociety.dev/packages?category=sveltekit-adapters)由社区维护。
 
@@ -29,7 +29,7 @@
 
 ## 参与贡献
 
-有关如何在本地开发 SvelteKit 的信息，请参阅 [CONTRIBUTING.md](https://github.com/sveltejs/kit/blob/version-3/CONTRIBUTING.md)。
+有关如何在本地开发 SvelteKit 的信息，请参阅 [CONTRIBUTING.md](https://github.com/sveltejs/kit/blob/main/CONTRIBUTING.md)。
 
 ## 支持 Svelte
 
@@ -41,4 +41,4 @@ Svelte 是一个采用 MIT 许可的开源项目，其持续开发完全得益�
 
 ## 许可证
 
-[MIT](https://github.com/sveltejs/kit/blob/version-3/LICENSE)
+[MIT](https://github.com/sveltejs/kit/blob/main/LICENSE)

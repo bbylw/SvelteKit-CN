@@ -8,7 +8,7 @@ title: 静态站点生成
 
 ## 用法
 
-用 `npm i -D @sveltejs/adapter-static` 安装，然后将适配器添加到你的 `vite.config.js`：
+运行 [`npx sv add sveltekit-adapter="adapter:static"`](/docs/cli/sveltekit-adapter)，或者用 `npm i -D @sveltejs/adapter-static` 安装，然后将适配器添加到你的 `vite.config.js`：
 
 ```js
 // @errors: 2307
@@ -98,7 +98,7 @@ export default defineConfig({
 
 ## GitHub Pages
 
-当为 [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages) 构建时，如果你的仓库名不等同于 `your-username.github.io`，请确保更新 [`config.paths.base`](configuration#paths) 以匹配你的仓库名。这是因为站点将从 `https://your-username.github.io/your-repo-name` 提供，而不是从根目录提供。
+当为 [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages) 构建时，如果你的仓库名不等同于 `your-username.github.io`，请确保更新 [`config.paths.base`](@sveltejs-kit-vite#paths) 以匹配你的仓库名。这是因为站点将从 `https://your-username.github.io/your-repo-name` 提供，而不是从根目录提供。
 
 你还会想要生成一个回退的 `404.html` 页面，以替换 GitHub Pages 显示的默认 404 页面。
 
@@ -136,6 +136,14 @@ on:
   push:
     branches: 'main'
 
+permissions:
+  contents: read
+  pages: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   build_site:
     runs-on: ubuntu-latest
@@ -147,21 +155,23 @@ jobs:
       # 改为使用 `pnpm`
       # - name: 安装 pnpm
       #   uses: pnpm/action-setup@v6
-      #   with:
-      #     version: 8
 
       - name: 安装 Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: 安装依赖
         run: npm i
 
+      - name: 配置 Pages
+        id: pages
+        uses: actions/configure-pages@v6
+
       - name: 构建
         env:
-          BASE_PATH: '/${{ github.event.repository.name }}'
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: |
           npm run build
 
@@ -170,6 +180,8 @@ jobs:
         with:
           # 这应该与你的 adapter-static 选项中的 `pages` 选项匹配
           path: 'build/'
+          # 保留 `static/.well-known` 等点文件
+          include-hidden-files: true
 
   deploy:
     needs: build_site

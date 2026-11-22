@@ -8,7 +8,7 @@ title: Netlify
 
 ## 用法
 
-用 `npm i -D @sveltejs/adapter-netlify` 安装，然后将适配器添加到你的 `vite.config.js`：
+运行 [`npx sv add sveltekit-adapter="adapter:netlify"`](/docs/cli/sveltekit-adapter)，或者用 `npm i -D @sveltejs/adapter-netlify` 安装，然后将适配器添加到你的 `vite.config.js`：
 
 ```js
 // @errors: 2307
@@ -21,57 +21,29 @@ export default defineConfig({
 	plugins: [
 		sveltekit({
 			adapter: adapter({
-				// 如果为 true，将创建 Netlify Edge Function 而不是
-				// 使用标准的基于 Node 的函数
+				// 见下文对这些选项的说明
 				edge: false,
-
-				// 如果为 true，将把你的应用拆分成多个函数，
-				// 而不是为整个应用创建一个函数。
-				// 如果 `edge` 为 true，则不能使用此选项
-				split: false
+				split: false,
+				publish: 'build'
 			})
 		})
 	]
 });
 ```
 
-然后，确保你在项目根目录中有一个 [netlify.toml](https://docs.netlify.com/configure-builds/file-based-configuration) 文件。这将根据 `build.publish` 设置决定在哪里写入静态资源，如下面的示例配置所示：
+## 选项
 
-```toml
-[build]
-	command = "npm run build"
-	publish = "build"
-```
+### `edge`
 
-如果 `netlify.toml` 文件或 `build.publish` 值缺失，将使用默认值 `"build"`。请注意，如果你在 Netlify UI 中将发布目录设置为了其他值，那么你也需要将其设置在 `netlify.toml` 中，或者使用默认值 `"build"`。
+如果为 `true`，你的应用将作为 [Netlify Edge Function](https://docs.netlify.com/build/edge-functions/overview/) 部署，而不是标准的基于 Node 的函数。
 
-### Node 版本
+### `split`
 
-新项目默认会使用当前的 Node LTS 版本。然而，如果你正在升级一个很久以前创建的项目，它可能会停留在较旧的版本上。有关手动指定当前 Node 版本的详细信息，请参阅 [Netlify 文档](https://docs.netlify.com/configure-builds/manage-dependencies/#node-js-and-javascript)。
+如果为 `true`，你的应用将被拆分成多个函数，而不是整个应用只用一个函数。
 
-## Netlify Edge Functions
+### `publish`
 
-SvelteKit 支持 [Netlify Edge Functions](https://docs.netlify.com/build/edge-functions/overview/)。如果你将 `edge: true` 选项传给 `adapter` 函数，服务器端渲染将发生在一个基于 Deno 的、部署在离站点访客很近的边缘函数中。如果设为 `false`（默认值），站点将部署到基于 Node 的 Netlify Functions。
-
-```js
-// @errors: 2307
-/// file: vite.config.js
-import adapter from '@sveltejs/adapter-netlify';
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
-
-export default defineConfig({
-	plugins: [
-		sveltekit({
-			adapter: adapter({
-				// 将创建基于 Deno 的 Netlify Edge Function
-				// 而不是使用标准的基于 Node 的函数
-				edge: true
-			})
-		})
-	]
-});
-```
+写入预渲染页面和静态资源（`static` 的内容，加上 SvelteKit 生成的客户端 JS 和 CSS）的目录。默认为 `build`。
 
 ## SvelteKit 功能的 Netlify 替代方案
 

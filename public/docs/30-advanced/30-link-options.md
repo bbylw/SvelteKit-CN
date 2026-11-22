@@ -78,29 +78,27 @@ SvelteKit 可以利用这些信息，提前开始导入代码并获取页面数�
 
 ……会在点击链接时替换当前的 `history` 条目，而不是用 `pushState` 创建新条目。
 
-## data-sveltekit-keepfocus
+## data-sveltekit-reset
 
-有时你不希望导航后[焦点被重置](accessibility#Focus-management)。例如，也许你有一个在用户输入时提交的搜索表单，并且你想让焦点保持在文本输入框上。向它添加 `data-sveltekit-keepfocus` 属性……
+当导航到内部链接时，SvelteKit 会镜像浏览器的默认导航行为：它会将滚动位置更改为 0,0，使用户位于页面的最左上角（除非链接包含 `#hash`，在这种情况下它会滚动到具有匹配 ID 的元素），并[重置焦点](accessibility#Focus-management)。
+
+在某些情况下，你可能希望禁用此行为。向链接添加 `data-sveltekit-reset="false"` 属性……
 
 ```html
-<form data-sveltekit-keepfocus>
+<a href="path" data-sveltekit-reset="false">Path</a>
+```
+
+……会在点击链接后保留当前的滚动位置和焦点元素。
+
+该属性也可以用在 `<form method="GET">` 上——例如在用户输入时提交的搜索表单，你希望焦点保持在文本输入框上：
+
+```html
+<form data-sveltekit-reset="false">
 	<input type="text" name="query">
 </form>
 ```
 
-……会使当前聚焦的元素在导航后保持焦点。一般来说，避免在链接上使用此属性，因为聚焦的元素将是 `<a>` 标签（而不是之前聚焦的元素），而屏幕阅读器和其他辅助技术的用户通常期望焦点在导航后被移动。你还应该只在导航后仍然存在的元素上使用此属性。如果该元素不再存在，用户的焦点将丢失，从而给辅助技术用户带来困惑的体验。
-
-## data-sveltekit-noscroll
-
-当导航到内部链接时，SvelteKit 会镜像浏览器的默认导航行为：它会将滚动位置更改为 0,0，使用户位于页面的最左上角（除非链接包含 `#hash`，在这种情况下它会滚动到具有匹配 ID 的元素）。
-
-在某些情况下，你可能希望禁用此行为。向链接添加 `data-sveltekit-noscroll` 属性……
-
-```html
-<a href="path" data-sveltekit-noscroll>Path</a>
-```
-
-……会在点击链接后阻止滚动。
+一般来说，避免在链接上保留焦点，因为聚焦的元素将是 `<a>` 标签（而不是之前聚焦的元素），而屏幕阅读器和其他辅助技术的用户通常期望焦点在导航后被移动。你还应该只在导航后仍然存在的元素上使用此属性。如果该元素不再存在，用户的焦点将丢失，从而给辅助技术用户带来困惑的体验。
 
 ## 禁用选项
 

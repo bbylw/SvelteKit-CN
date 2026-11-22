@@ -19,7 +19,7 @@ API_KEY=19f401ba-e8b0-48c4-8c77-b0ebb26d97fe
 > [!LEGACY]
 > `$env/*` 模块，连同 `$app/environment`，在 SvelteKit 3 中已被弃用（并将在 SvelteKit 4 中移除），取而代之的是在 SvelteKit 2.62 中作为实验性选项添加的显式环境变量。
 
-### 设置
+## 设置
 
 添加一个导出了 `variables` 对象的 `src/env.ts`（或 `src/env.js`）文件：
 
@@ -32,11 +32,11 @@ export const variables = defineEnvVars({
 });
 ```
 
-传给 [`defineEnvVars`](@sveltejs-kit-hooks#defineEnvVars) 的对象中的每个值，都是一个 [`EnvVarConfig`](@sveltejs-kit#EnvVarConfig) 对象，用于配置该环境变量。
+传给 [`defineEnvVars`](@sveltejs-kit-hooks#defineEnvVars) 的对象中的每个值，都是一个 [`EnvVarConfig`](@sveltejs-kit-env#EnvVarConfig) 对象，用于配置该环境变量。
 
 > [!NOTE] `defineEnvVars` 原样返回它的参数——它纯粹是为了帮助类型安全而存在。
 
-### 私有变量
+## 私有变量
 
 默认情况下，所有变量都被视为私有的。例如，你不想泄露你的 `API_KEY`：
 
@@ -59,7 +59,7 @@ import { API_KEY } from '$app/env/private';
 
 `$app/env/private` 模块不能被导入到在浏览器中运行的代码中，这样你就不会意外地在 JavaScript 包中泄露你的机密。
 
-### 公共变量
+## 公共变量
 
 有些变量完全可以——甚至有必要——暴露给浏览器。对于这些情况，我们可以指定 `public: true`：
 
@@ -104,13 +104,13 @@ export const variables = defineEnvVars({
 </html>
 ```
 
-### 校验
+## 校验
 
 你可以指定一个 [Standard Schema](https://standardschema.dev/) 校验器，如 [Zod](https://zod.dev/) 或 [Valibot](https://valibot.dev/)，来检查环境变量值是否正确：
 
 ```ts
 /// file: src/env.ts
-import { defineEnvVars } from '@sveltejs/kit/hooks';
+import { defineEnvVars } from '@sveltejs/kit/env';
 +++import * as v from 'valibot';+++
 
 export const variables = defineEnvVars({
@@ -125,7 +125,7 @@ export const variables = defineEnvVars({
 
 ```ts
 /// file: src/env.ts
-import { defineEnvVars } from '@sveltejs/kit/hooks';
+import { defineEnvVars } from '@sveltejs/kit/env';
 +++import { building } from '$app/env'+++
 import * as v from 'valibot';
 
@@ -139,7 +139,24 @@ export const variables = defineEnvVars({
 
 你可以使用校验器让值变为可选，或转换它们（例如将字符串转为布尔值，或解析 JSON）——请参阅你的校验库文档以了解如何操作。
 
-### 静态变量
+如果你不想引入校验库，也可以传入一个函数，让它返回（可能经过转换的）值，或抛出一个说明问题的错误：
+
+```ts
+/// file: src/env.ts
+import { defineEnvVars } from '@sveltejs/kit/env';
+
+export const variables = defineEnvVars({
+	GOOGLE_ANALYTICS_ID: {
+		public: true,
+		schema: (value) => {
+			if (!value?.startsWith('G-')) throw new Error('expected a Google Analytics ID');
+			return value;
+		}
+	}
+});
+```
+
+## 静态变量
 
 默认情况下，变量是动态的。如果一个变量配置了 `static: true`，它将被内联到你的应用代码中，从而启用诸如死代码消除之类的优化：
 
@@ -183,7 +200,7 @@ SHOW_DEBUG_OVERLAY=true npm run build
 
 ……那么该组件就会被包含并显示出来。
 
-### 记录变量的用途
+## 记录变量的用途
 
 你可以通过添加 `description` 来记录一个环境变量的用途：
 

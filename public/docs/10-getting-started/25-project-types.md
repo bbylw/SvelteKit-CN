@@ -8,7 +8,7 @@ SvelteKit 提供可配置的渲染方式，允许你以多种不同的方式构�
 
 ## 默认渲染
 
-默认情况下，当用户访问站点时，SvelteKit 会使用[服务器端渲染（SSR）](glossary#SSR) 渲染首页，并使用[客户端渲染（CSR）](glossary#CSR) 渲染后续页面。对初始渲染使用 SSR 可以改善 SEO 和首屏加载的感知性能。随后客户端渲染接管，无需重新渲染公共组件就能更新页面，这通常更快，并消除了页面间导航时的闪烁。使用这种混合渲染方式构建的应用也被称为[过渡式应用（transitional apps）](https://www.youtube.com/watch?v=860d8usGC0o)。
+默认情况下，当用户访问站点时，SvelteKit 会使用[服务器端渲染（SSR）](glossary#SSR) 渲染首页，并使用[客户端渲染（CSR）](glossary#CSR) 渲染后续页面。对初始渲染使用 SSR 可以改善 SEO 和首屏加载的感知性能。随后客户端渲染接管，无需重新渲染公共组件就能更新页面，这通常更快，并消除了页面间导航时的闪烁。使用这种混合渲染方式构建的应用也被称为[过渡式应用（transitional apps）](https://2021.jamstackconf.com/talk/c17544108e71/transitional-apps/)。
 
 ## 静态站点生成
 
@@ -54,7 +54,7 @@ SvelteKit 全面支持[服务工作者](service-workers)，允许你构建多种
 
 你可以使用 [Tauri](https://v2.tauri.app/start/frontend/sveltekit/) 或 [Capacitor](https://capacitorjs.com/solution/svelte) 将 [SvelteKit SPA](single-page-apps) 转变为移动应用。像相机、地理位置和推送通知等移动功能在两个平台上都可通过插件获得。
 
-这些移动开发平台通过启动一个本地 Web 服务器，然后像静态主机一样在你的手机上提供应用。你可能会发现 [`bundleStrategy: 'single'`](configuration#output) 是一个有用的选项，可以限制发出的请求数量。例如，在撰写本文时，Capacitor 本地服务器使用 HTTP/1，这会限制并发连接的数量。
+这些移动开发平台通过启动一个本地 Web 服务器，然后像静态主机一样在你的手机上提供应用。你可能会发现 [`bundleStrategy: 'single'`](@sveltejs-kit-vite#output) 是一个有用的选项，可以限制发出的请求数量。例如，在撰写本文时，Capacitor 本地服务器使用 HTTP/1，这会限制并发连接的数量。
 
 ## 桌面应用
 
@@ -66,4 +66,4 @@ SvelteKit 全面支持[服务工作者](service-workers)，允许你构建多种
 
 ## 嵌入式设备
 
-由于其高效的渲染，Svelte 可以在低功耗设备上运行。微控制器和电视等嵌入式设备可能会限制并发连接的数量。为了减少并发请求的数量，在这种部署配置中，你可能会发现 [`bundleStrategy: 'single'`](configuration#output) 是一个有用的选项。
+由于其高效的渲染，Svelte 可以在低功耗设备上运行。微控制器和电视等嵌入式设备可能会限制并发连接的数量。为了减少并发请求的数量，在这种部署配置中，你可能会发现 [`bundleStrategy: 'single'`](@sveltejs-kit-vite#output) 是一个有用的选项。

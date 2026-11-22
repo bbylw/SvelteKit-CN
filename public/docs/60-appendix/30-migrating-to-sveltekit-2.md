@@ -84,9 +84,9 @@ export +++async+++ function load({ fetch }) {
 
 ## 路径现在默认是相对的
 
-在 SvelteKit 1 中，`app.html` 中的 `%sveltekit.assets%` 默认会被替换为相对路径（即 `.` 或 `..` 或 `../..` 等，取决于被渲染的路径），在服务器端渲染期间，除非 [`paths.relative`](configuration#paths) 配置选项被显式设置为 `false`。对于从 `$app/paths` 导入的 `base` 和 `assets` 也是同样的情况，但仅当 `paths.relative` 选项被显式设置为 `true` 时才是如此。
+在 SvelteKit 1 中，`app.html` 中的 `%sveltekit.assets%` 默认会被替换为相对路径（即 `.` 或 `..` 或 `../..` 等，取决于被渲染的路径），在服务器端渲染期间，除非 [`paths.relative`](@sveltejs-kit-vite#paths) 配置选项被显式设置为 `false`。对于从 `$app/paths` 导入的 `base` 和 `assets` 也是同样的情况，但仅当 `paths.relative` 选项被显式设置为 `true` 时才是如此。
 
-这种不一致性在 2 版本中得到了修复。路径要么始终是相对的，要么始终是绝对的，取决于 [`paths.relative`](configuration#paths) 的值。它默认为 `true`，因为这会生成更具可移植性的应用：如果 `base` 与应用的预期不同（例如[互联网档案馆](https://archive.org/) 上的情况），或在构建时未知（例如部署到 [IPFS](https://ipfs.tech/) 等情况），则更不容易出问题。
+这种不一致性在 2 版本中得到了修复。路径要么始终是相对的，要么始终是绝对的，取决于 [`paths.relative`](@sveltejs-kit-vite#paths) 的值。它默认为 `true`，因为这会生成更具可移植性的应用：如果 `base` 与应用的预期不同（例如[互联网档案馆](https://archive.org/) 上的情况），或在构建时未知（例如部署到 [IPFS](https://ipfs.tech/) 等情况），则更不容易出问题。
 
 ## 服务端 fetch 不再可追踪
 
@@ -143,7 +143,7 @@ SvelteKit 2 通过用两个新属性调用 `handleError` 钩子来清理这个�
 
 ## 生成的 `tsconfig.json` 更严格
 
-以前，当你的 `tsconfig.json` 包含 `paths` 或 `baseUrl` 时，生成的 `tsconfig.json` 会尽力仍然产生一个多少有效的配置。在 SvelteKit 2 中，验证更加严格，当你在 `tsconfig.json` 中使用 `paths` 或 `baseUrl` 时会发出警告。这些设置用于生成路径别名，你应该改用 `vite.config.js` 中 SvelteKit 插件的 [the `alias` config](configuration#alias) 选项，以便也为打包工具创建相应的别名。
+以前，当你的 `tsconfig.json` 包含 `paths` 或 `baseUrl` 时，生成的 `tsconfig.json` 会尽力仍然产生一个多少有效的配置。在 SvelteKit 2 中，验证更加严格，当你在 `tsconfig.json` 中使用 `paths` 或 `baseUrl` 时会发出警告。这些设置用于生成路径别名，你应该改用 `vite.config.js` 中 SvelteKit 插件的 [the `alias` config](@sveltejs-kit-vite#alias) 选项，以便也为打包工具创建相应的别名。
 
 ## `getRequest` 不再抛出错误
 

@@ -45,7 +45,7 @@ afterNavigate(() => {
 });
 ```
 
-你也可以使用 [`goto`]($app-navigation#goto) 函数以编程方式导航到不同的页面。默认情况下，这与点击链接具有相同的客户端路由行为。不过，`goto` 也接受一个 `keepFocus` 选项，该选项会保留当前聚焦的元素而非重置焦点。如果你启用此选项，请确保当前聚焦的元素在导航后仍然存在于页面上。如果该元素不再存在，用户的焦点将会丢失，从而给辅助技术用户带来困惑的体验。
+你也可以使用 [`goto`]($app-navigation#goto) 函数以编程方式导航到不同的页面。默认情况下，这与点击链接具有相同的客户端路由行为。不过，`goto` 也接受一个 `reset: false` 选项，该选项会保留当前的滚动位置和当前聚焦的元素而非重置它们。如果你使用此选项，请确保当前聚焦的元素在导航后仍然存在于页面上。如果该元素不再存在，用户的焦点将会丢失，从而给辅助技术用户带来困惑的体验。
 
 ## "lang" 属性
 
@@ -56,7 +56,7 @@ afterNavigate(() => {
 <html lang="de">
 ```
 
-如果你的内容有多种语言可用，你应该根据当前页面的语言设置 `lang` 属性。你可以通过 SvelteKit 的 [handle 钩子](hooks#Server-hooks-handle) 来做到这一点：
+如果你的内容有多种语言可用，你应该根据当前页面的语言设置 `lang` 属性。你可以通过 SvelteKit 的 [handle 钩子](hooks#handle) 来做到这一点：
 
 ```html
 /// file: src/app.html
@@ -73,7 +73,7 @@ export function get_lang(event: import('@sveltejs/kit').RequestEvent) {
 // @filename: hooks.server.js
 import { get_lang } from './utils';
 // ---cut---
-/** @type {import('@sveltejs/kit').Handle} */
+/** @type {import('@sveltejs/kit/hooks').Handle} */
 export function handle({ event, resolve }) {
 	return resolve(event, {
 		transformPageChunk: ({ html }) => html.replace('%lang%', get_lang(event))

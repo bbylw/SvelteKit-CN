@@ -189,7 +189,7 @@ import Foo from 'your-library/Foo.svelte';
 
 你应该避免在包中使用像 `$app/env` 这样 SvelteKit 专属的模块，除非你打算让它们只能被其他 SvelteKit 项目消费。例如，与其使用 `import { browser } from '$app/env'`，不如使用 `import { BROWSER } from 'esm-env'`（[参见 esm-env 文档](https://github.com/benmccann/esm-env)）。你可能也希望将当前 URL 或导航动作等作为 prop 传入，而不是直接依赖 `$app/state`、`$app/navigation` 等。以这种更通用的方式编写你的应用，也会让你更容易搭建测试、UI 演示等工具。
 
-请确保在你的 `vite.config.js`（而非 `tsconfig.json`）中通过 SvelteKit 插件添加[别名](configuration#alias)，这样它们才会被 `svelte-package` 处理。
+在库代码中使用[子路径导入（subpath imports）](https://nodejs.org/api/packages.html#subpath-imports) 来设置别名。`svelte-package` 在打包时会将你包 `package.json` 中 `imports` 字段里以 `#` 开头的导入重写为相对路径。
 
 你应该仔细考虑你对包所做的修改是 bug 修复、新功能还是破坏性变更，并相应地更新包的版本号。注意，如果你从现有的库中移除了 `exports` 中的任何路径或其内部的任何 `export` 条件，那应被视为一次破坏性变更。
 

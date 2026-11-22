@@ -40,7 +40,7 @@ Svelte 组件会存储一些状态，并在状态更新时更新 DOM。在 SSR �
 
 预渲染的页面不限于静态内容。如果用户特定的数据是在客户端获取并渲染的，你可以构建个性化页面。但这有一个注意事项，即你将遭遇如上所述不对这些内容进行 SSR 的缺点。
 
-在 SvelteKit 中，你可以通过 [the `prerender` page option](page-options#prerender) 以及 `vite.config.js` 中 SvelteKit 插件的 [`prerender` config](configuration#prerender) 来控制预渲染。
+在 SvelteKit 中，你可以通过 [the `prerender` page option](page-options#prerender) 以及 `vite.config.js` 中 SvelteKit 插件的 [`prerender` config](@sveltejs-kit-vite#prerender) 来控制预渲染。
 
 ## PWA
 
@@ -62,7 +62,7 @@ Svelte 组件会存储一些状态，并在状态更新时更新 DOM。在 SSR �
 
 静态站点生成（SSG）是一个术语，指的是一个站点中每个页面都被预渲染。完全预渲染一个站点的一个好处是你不需要维护或付费使用执行 SSR 的服务器。一旦生成，站点就可以从 CDN 提供，带来极佳的"首字节时间"性能。这种交付模式通常被称为 JAMstack。
 
-在 SvelteKit 中，你可以通过使用 [`adapter-static`](adapter-static) 或通过配置每个页面使用 [the `prerender` page option](page-options#prerender) 或 `vite.config.js` 中 SvelteKit 插件的 [`prerender` config](configuration#prerender) 进行[预渲染](#Prerendering) 来做静态站点生成。
+在 SvelteKit 中，你可以通过使用 [`adapter-static`](adapter-static) 或通过配置每个页面使用 [the `prerender` page option](page-options#prerender) 或 `vite.config.js` 中 SvelteKit 插件的 [`prerender` config](@sveltejs-kit-vite#prerender) 进行[预渲染](#Prerendering) 来做静态站点生成。
 
 ## SSR
 

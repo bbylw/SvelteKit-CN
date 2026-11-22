@@ -2,6 +2,8 @@
 title: 表单操作
 ---
 
+> [!NOTE] 实验性的 [`form` 远程函数](remote-functions#form) 涵盖了与表单操作相同的用例，还增加了类型安全和[单次往返变更（single-flight mutations）](remote-functions#Single-flight-mutations)。表单操作功能已经完备并将继续可用，但新的开发重点在远程函数上，它有望成为与服务器通信的推荐方式。新项目可以考虑使用远程函数，但请记住，在该功能仍处于实验阶段时，其 API 可能发生变化。
+
 一个 `+page.server.js` 文件可以导出_操作（actions）_，它允许你使用 `<form>` 元素将数据 `POST` 到服务器。
 
 使用 `<form>` 时，客户端 JavaScript 是可选的，但你可以轻松地用 JavaScript 对你的表单交互进行_渐进增强_，以提供最佳用户体验。
@@ -49,6 +51,8 @@ export const actions = {
 	<!-- 内容 -->
 </form>
 ```
+
+提交此表单会把你带到 `/login`，无论操作成功还是失败——这就是浏览器的行为，而 [`use:enhance`](#Progressive-enhancement-use:enhance) 会模拟它。如果你希望留在原页面并就地处理结果，可以在[渐进增强](#Progressive-enhancement-use:enhance) 一节中找到相应的做法。
 
 ## 命名操作
 
@@ -107,11 +111,11 @@ export const actions = {
 ```js
 /// file: src/routes/login/+page.server.js
 // @filename: ambient.d.ts
-declare module '#lib/server/db';
+declare module '#lib/server/db.js';
 
 // @filename: index.js
 // ---cut---
-import * as db from '#lib/server/db';
+import * as db from '#lib/server/db.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ cookies }) {
@@ -127,7 +131,7 @@ export const actions = {
 		const password = data.get('password');
 
 		const user = await db.getUser(email);
-		cookies.set('sessionid', await db.createSession(user), { path: '/' });
+		cookies.set('sessionid', await db.createSession(user));
 
 		return { success: true };
 	},
@@ -170,12 +174,12 @@ export const actions = {
 ```js
 /// file: src/routes/login/+page.server.js
 // @filename: ambient.d.ts
-declare module '#lib/server/db';
+declare module '#lib/server/db.js';
 
 // @filename: index.js
 // ---cut---
 +++import { fail } from '@sveltejs/kit';+++
-import * as db from '#lib/server/db';
+import * as db from '#lib/server/db.js';
 
 /** @satisfies {import('./$types').Actions} */
 export const actions = {
@@ -194,7 +198,7 @@ export const actions = {
 			return fail(400, { email, incorrect: true });
 		}+++
 
-		cookies.set('sessionid', await db.createSession(user), { path: '/' });
+		cookies.set('sessionid', await db.createSession(user));
 
 		return { success: true };
 	},
@@ -234,12 +238,12 @@ export const actions = {
 // @errors: 2345
 /// file: src/routes/login/+page.server.js
 // @filename: ambient.d.ts
-declare module '#lib/server/db';
+declare module '#lib/server/db.js';
 
 // @filename: index.js
 // ---cut---
 import { fail, +++redirect+++ } from '@sveltejs/kit';
-import * as db from '#lib/server/db';
+import * as db from '#lib/server/db.js';
 
 /** @satisfies {import('./$types').Actions} */
 export const actions = {
@@ -257,7 +261,7 @@ export const actions = {
 			return fail(400, { email, incorrect: true });
 		}
 
-		cookies.set('sessionid', await db.createSession(user), { path: '/' });
+		cookies.set('sessionid', await db.createSession(user));
 
 +++		if (url.searchParams.has('redirectTo')) {
 			redirect(303, url.searchParams.get('redirectTo'));
@@ -299,7 +303,7 @@ export {};
 
 // @filename: index.js
 // ---cut---
-/** @type {import('@sveltejs/kit').Handle} */
+/** @type {import('@sveltejs/kit/hooks').Handle} */
 export async function handle({ event, resolve }) {
 	event.locals.user = await getUser(event.cookies.get('sessionid'));
 	return resolve(event);
@@ -329,7 +333,7 @@ export function load(event) {
 /** @satisfies {import('./$types').Actions} */
 export const actions = {
 	logout: async (event) => {
-		event.cookies.delete('sessionid', { path: '/' });
+		event.cookies.delete('sessionid');
 		event.locals.user = null;
 	}
 };
@@ -361,12 +365,36 @@ export const actions = {
 
 不带参数时，`use:enhance` 会模拟浏览器原生的行为，只是没有整页重新加载。它会：
 
-- 在成功或无效的响应上更新 `form` 属性、`page.form` 和 `page.status`，但仅当该操作位于你提交所在的同一页面时。例如，如果你的表单看起来像 `<form action="/somewhere/else" ..>`，那么 `form` 属性和 `page.form` 状态将_不会_被更新。这是因为在原生表单提交的情况下，你将被重定向到该操作所在的页面。如果你希望无论如何都更新它们，请使用 [`applyAction`](#Progressive-enhancement-Customising-use:enhance)
+- 如果你的表单位于你提交所在的页面上，则模拟重新加载当前页面——在成功或无效的响应上更新 `form` 属性、`page.form` 和 `page.status`
+- 如果操作位于不同的页面（例如 `<form action="/somewhere/else" ..>`），则在成功_或_无效的响应上导航到该操作的 URL，并填充该页面的 `form` 属性和 `page.status`，就像原生提交一样。同时会压入一个新的历史记录条目
 - 重置 `<form>` 元素
-- 在成功响应上使用 `invalidateAll` 使所有数据失效
+- 在成功响应上使用 `refreshAll` 刷新所有数据
 - 在重定向响应上调用 `goto`
-- 如果发生错误，渲染最近的 `+error` 边界
+- 如果发生意外错误，渲染最近的 `+error` 边界——如果操作位于其他页面，则渲染离_操作所在路由_最近的边界
 - [重置焦点](accessibility#Focus-management) 到适当的元素
+
+> [!NOTE] 关于 URL，有两点值得了解：
+>
+> 提交最终落到哪里由 `result.location` 决定——即移除了 `?/actionName` 参数的表单 `action`，因为该参数在操作运行后已完成其使命。`action="/login?/do-login"` 会落在 `/login`，其他查询参数会被保留，因此 `action="/login?redirectTo=/dashboard&/do-login"` 会落在 `/login?redirectTo=/dashboard`。目标页面的 `load` 函数可以通过 `url.search` 看到该 URL。
+>
+> 由此带来的两个后果值得了解：
+>
+> - _相对_ action 会因 URL 解析而替换整个查询字符串——在 `/items?page=2` 上，`action="?/delete"` 会解析为 `/items?/delete`，因此增强提交和原生提交都会丢弃 `page=2`。要保留它，请写成 `action="?page=2&/delete"`。
+> - 在没有 JavaScript 的情况下，浏览器无法去掉任何内容，因此未增强的提交会让你停留在原始的 action URL（`/login?/do-login`）上。重新加载该 URL 只是一个普通的 `GET`，它不会重新运行操作，并会正常渲染页面，所以这种差异只是表面上的——但 `load` 函数可能会根据 JavaScript 是否可用而观察到不同的 `url.search`。
+
+如果你不希望跨页面提交发生导航——登录或订阅小部件等位于布局中、却要提交到另一个页面操作的需求很常见——可以向 `update` 传入 `navigate: false`，从而获得与 SvelteKit 2 相同的行为：
+
+```svelte
+<form
+	method="POST"
+	action="/other/page?/subscribe"
+	use:enhance={() => async ({ update }) => {
+		await update({ navigate: false });
+	}}
+>
+```
+
+结果会应用到当前页面：`form`、`page.form` 和 `page.status` 会被更新，错误结果会渲染当前路由最近的 `+error` 边界。
 
 ### 自定义 use:enhance
 
@@ -392,7 +420,7 @@ export const actions = {
 
 你可以用这些函数显示和隐藏加载 UI，等等。
 
-如果你返回一个回调，你将覆盖默认的提交后行为。要恢复它，调用 `update`，它接受 `invalidateAll` 和 `reset` 参数，或者在结果上使用 `applyAction`：
+如果你返回一个回调，你将覆盖默认的提交后行为。要恢复它，调用 `update`，它接受 `navigate`、`refreshAll` 和 `reset` 参数，或者在结果上使用 `applyAction`：
 
 ```svelte
 /// file: src/routes/login/+page.svelte
@@ -418,13 +446,19 @@ export const actions = {
 >
 ```
 
+> [!NOTE] `update` 接受以下选项：
+>
+> - `reset: false`，如果你不希望在成功提交后重置 `<form>` 的值
+> - `refreshAll` 控制提交后是否刷新所有数据。对于成功的结果默认为 `true`，对于失败默认为 `false`。当提交导航到另一个页面时，将其设为 `false` _不会_阻止目标页面自己的 `load` 函数运行——它只会允许复用共享的布局数据。`invalidateAll` 是 `refreshAll` 的已弃用别名
+> - `navigate: false` 会将非重定向结果应用到当前页面，而不是导航到 `result.location`。重定向始终会被跟随
+
 `applyAction(result)` 的行为取决于 `result.type`：
 
-- `success`、`failure` —— 将 `page.status` 设为 `result.status`，并将 `form` 和 `page.form` 更新为 `result.data`（无论你从哪里提交，这与 `enhance` 的 `update` 不同）
-- `redirect` —— 调用 `goto(result.location, { invalidateAll: true })`
-- `error` —— 用 `result.error` 渲染最近的 `+error` 边界
+- `success`、`failure` —— 将 `page.status` 设为 `result.status`，并将 `form` 和 `page.form` 更新为 `result.data`
+- `redirect` —— 调用 `goto(result.location, { refreshAll: true })`
+- `error` —— 用 `result.error` 渲染当前路由最近的 `+error` 边界
 
-在所有情况下，[焦点都会被重置](accessibility#Focus-management)。
+在所有情况下，[焦点都会被重置](accessibility#Focus-management)。`applyAction` 不会导航到非重定向结果的 `location`，也不会刷新数据。要获得完整的默认增强行为（包括将表单数据和状态带入跨页面导航），请使用 `update`。在手动实现增强时，请检查 `result.location`，并按需使用 [`goto`]($app-navigation#goto) 或 [`refreshAll`]($app-navigation#refreshAll)。
 
 ### 自定义事件监听器
 
@@ -449,15 +483,18 @@ export const actions = {
 			body: data
 		});
 
-		/** @type {import('@sveltejs/kit').ActionResult} */
+		/** @type {import('$app/forms').ActionResult} */
 		const result = deserialize(await response.text());
 
-		if (result.type === 'success') {
-			// 在成功更新后，重新运行所有 `load` 函数和查询
-			await refreshAll();
+		if (result.type !== 'redirect' && result.location !== undefined) {
+			if (result.location === location.pathname + location.search) {
+				if (result.type === 'success') await refreshAll();
+			} else {
+				await goto(result.location, { refreshAll: result.type === 'success' });
+			}
 		}
 
-		applyAction(result);
+		await applyAction(result);
 	}
 </script>
 
@@ -522,7 +559,7 @@ export function POST() {
 </form>
 ```
 
-提交此表单将导航到 `/search?q=...` 并调用你的 load 函数，但_不会_调用操作。与 `<a>` 元素一样，你可以在 `<form>` 上设置 [`data-sveltekit-reload`](link-options#data-sveltekit-reload)、[`data-sveltekit-replacestate`](link-options#data-sveltekit-replacestate)、[`data-sveltekit-keepfocus`](link-options#data-sveltekit-keepfocus) 和 [`data-sveltekit-noscroll`](link-options#data-sveltekit-noscroll) 属性来控制路由器的行为。
+提交此表单将导航到 `/search?q=...` 并调用你的 load 函数，但_不会_调用操作。与 `<a>` 元素一样，你可以在 `<form>` 上设置 [`data-sveltekit-reload`](link-options#data-sveltekit-reload)、[`data-sveltekit-replacestate`](link-options#data-sveltekit-replacestate)和 [`data-sveltekit-reset`](link-options#data-sveltekit-reset) 属性来控制路由器的行为。
 
 ## 延伸阅读
 

@@ -6,7 +6,7 @@ title: 仅服务器模块
 
 ## 私有环境变量
 
-[`$app/env/private`](environment-variables) 模块只能被导入到仅在服务器上运行的模块中，例如 [`hooks.server.js`](hooks#Server-hooks) 或 [`+page.server.js`](routing#page-page.server.js)。
+[`$app/env/private`](environment-variables) 模块只能被导入到仅在服务器上运行的模块中，例如 [`hooks.server.js`](hooks) 或 [`+page.server.js`](routing#page-page.server.js)。
 
 ## 仅服务器工具
 
@@ -14,10 +14,13 @@ title: 仅服务器模块
 
 ## 你自己的模块
 
-你可以通过两种方式将你自己的模块设为仅服务器：
+你可以通过两种方式将模块设为仅服务器：
 
-- 对于单个模块，在文件名中添加 `.server`，例如 `secrets.server.js`。这适用于项目目录中的*任何*文件。
-- 项目中任何位置（`src/routes` 或资源目录内部除外）名为 `server` 的目录，会将其中的*所有*代码标记为仅服务器，例如 `src/lib/server/config.js` 或 `src/lib/data/server/user/profile.js`。（在 SvelteKit 2 中，这仅适用于 `src/lib` 文件夹。）
+- 在文件名中添加 `server` 段，例如 `server.js` 或 `secrets.server.ts`。这适用于项目目录中的任何文件。
+- 将它放在项目中任何位置的 `server` 目录（`src/routes` 或 `static` 目录内部除外），例如 `src/lib/server/config.js` 或 `src/lib/data/server/user/profile.js`。
+
+> [!LEGACY]
+> 在 SvelteKit 2 中，`server` 目录只在 `src/lib` 文件夹内被识别。
 
 > [!NOTE] 你工作目录之外的模块以及 `node_modules` 内部的模块（例如来自 npm 的包）*不*受这些规则约束。如果你想发布一个带有仅服务器模块的包，请在该文件顶部添加 `import '$app/server'`。
 

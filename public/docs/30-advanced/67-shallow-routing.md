@@ -1,52 +1,132 @@
 ---
-title: 浅层路由
+title: 页面状态与浅路由
 ---
 
-当你在 SvelteKit 应用中导航时，你会创建*历史条目*。点击后退和前进按钮会遍历这个条目列表，重新运行任何 `load` 函数并根据需要替换页面组件。
+当你在 SvelteKit 应用中导航时，你会创建_历史记录条目（history entries）_。点击后退和前进按钮会遍历这个条目列表，重新运行任何 `load` 函数、替换页面组件，并按需更新滚动位置和焦点元素。
 
-有时，*不*进行导航就创建历史条目会很有用。例如，你可能想显示一个用户可以通过导航返回来关闭的模态对话框。这在移动设备上尤其有价值，因为滑动手势通常比直接与 UI 交互更自然。在这些情况下，一个*没有*与历史条目相关联的模态框可能成为挫败感的来源，因为用户可能会尝试向后滑动来关闭它，结果却发现自己到了错误的页面。
+有时，在不执行完整导航的情况下创建历史记录条目是很有用的。我们称之为_浅路由（shallow routing）_。
 
-SvelteKit 通过 [`pushState`]($app-navigation#pushState) 和 [`replaceState`]($app-navigation#replaceState) 函数使这成为可能，它们允许你在不导航的情况下将状态与历史条目相关联。例如，要实现一个由历史驱动的模态框：
+例如，你可能想显示一个模态对话框，用户可以通过后退来关闭它。这在移动设备上尤其有价值，因为滑动手势通常比直接与 UI 交互更自然。在这些情况下，_未_与历史记录条目关联的模态框可能会令人沮丧，因为用户可能会向后滑动试图关闭它，却发现自己到了错误的页面。
+
+SvelteKit 通过 [`goto`]($app-navigation#goto) 函数实现这一点：使用 `shallow: true` 选项，它允许你将状态与历史记录条目关联，而无需导航：
 
 ```svelte
 <!--- file: +page.svelte --->
 <script>
-	import { pushState } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Modal from './Modal.svelte';
 
 	function showModal() {
-		pushState('', {
-			showModal: true
+		goto('', {
+			state: { showModal: true },
+			shallow: true
 		});
 	}
 </script>
+
+<button onclick={showModal}>打开</button>
 
 {#if page.state.showModal}
 	<Modal close={() => history.back()} />
 {/if}
 ```
 
-可以通过导航返回（取消设置 `page.state.showModal`）来关闭模态框，或者通过以导致 `close` 回调运行的方式与其交互来关闭，后者会以编程方式导航返回。
+状态可以通过 [page 对象]($app-state#page) 以 `page.state` 的形式全局访问。你可以通过声明 [`App.PageState`](types#PageState) 接口（通常在 `src/app.d.ts` 中）来使页面状态具有类型安全。
 
-## API
+模态框可以通过后退导航（取消设置 `page.state.showModal`）来关闭，也可以通过以某种方式与它交互来关闭，从而触发 `close` 回调，该回调会以编程方式后退导航。
 
-`pushState` 的第一个参数是 URL，相对于当前 URL。要停留在当前 URL 上，使用 `''`。
+在浅导航期间，你也可以更新浏览器地址栏的内容：
 
-第二个参数是新的页面状态，可以通过 [page 对象]($app-state#page) 以 `page.state` 访问。你可以通过声明一个 [`App.PageState`](types#PageState) 接口（通常在 `src/app.d.ts` 中）来使页面状态类型安全。
+```js
+import { goto } from '$app/navigation';
+const state = { active: true };
+// ---cut---
+goto('/another/page', {
+	state,
+	shallow: true
+});
+```
 
-要在不创建新历史条目的情况下设置页面状态，请使用 `replaceState` 而不是 `pushState`。
+> [!NOTE] 如果用户重新加载，他们会落在 `/another/page`，而_不是_当前渲染的页面——请参阅[注意事项](#Caveats)。
+
+无论你是否选择更新可见的 URL，[`beforeNavigate`]($app-navigation#beforeNavigate)、[`onNavigate`]($app-navigation#onNavigate) 和 [`afterNavigate`]($app-navigation#afterNavigate) 都会以 `navigation.type === 'goto'` 和 `navigation.shallow === true` 运行。
+
+一旦浅路由处于活动状态，`page.shallow` 就会变成一个 `{ url, params, route }` 对象，描述如果用户导航到那里（例如重新加载页面时会发生的情况）_将会_渲染的页面。`page.url`、`page.params` 和 `page.route` 继续描述当前渲染的页面。
+
+```svelte
+<!--- file: +page.svelte --->
+<script>
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
+</script>
+
+<p>用户可见的 URL 是 {page.shallow?.url.href ?? page.url.href}</p>
+<p>你实际所在的页面是 {page.url.href}</p>
+
+<button onclick={() => goto('/shallow', { shallow: true })}>进入浅路由</button>
+```
+
+不带 `shallow: true` 的常规 `goto` 调用或标准链接点击会退出浅路由。
+
+后退或前进到某个浅路由条目会恢复它的 `page.state` 和 `page.shallow`。渲染的页面（因而 `page.url`）仍然是调用 `goto` 时用户所在的页面。要导航到可见的 URL，请在不带 `shallow: true` 的情况下调用 `goto(page.shallow.url)`。
+
+> [!LEGACY]
+> 在 SvelteKit 2 中，此功能是通过 `pushState` 和 `replaceState` 实现的，它们现在已被弃用。请改用带 `shallow: true` 的 `goto`，并在替换当前历史记录条目时使用 `replace` 选项。
+
+## 路由选项
+
+默认情况下，上面的示例会在历史栈中创建一个新的导航条目。如果你不想这样，可以改为替换现有的导航条目：
+
+```js
+import { goto } from '$app/navigation';
+const url = new URL('https://example.com');
+const state = { showModal: true };
+// ---cut---
+goto(url, {
+	state,
+	replace: true
+});
+```
+
+默认情况下，使用 `goto` 设置的状态在重新加载后不会恢复。要改变这一点，请使用 `persistState`：
+
+```js
+import { goto } from '$app/navigation';
+const url = new URL('https://example.com');
+const state = { showModal: true };
+// ---cut---
+goto(url, {
+	state,
+	persistState: true
+});
+```
+
+浅导航默认会保留当前的滚动位置和焦点元素。你可以使用 `reset: true` 退出此行为：
+
+```js
+import { goto } from '$app/navigation';
+const url = new URL('https://example.com');
+// ---cut---
+goto(url, {
+	shallow: true,
+	reset: true
+});
+```
+
+> [!NOTE]
+> `page.state` 只有在 JavaScript 加载后才会被填充，这可能导致 UI 闪烁。请谨慎使用。
 
 ## 为路由加载数据
 
-进行浅层路由时，你可能想在当前页面内部渲染另一个 `+page.svelte`。例如，点击照片缩略图可以弹出详情视图，而无需导航到照片页面。
+进行浅路由时，你可能想在当前页面内渲染另一个 `+page.svelte`。例如，点击照片缩略图可以在不导航到照片页面的情况下弹出详情视图。
 
-为此，你需要加载 `+page.svelte` 所期望的数据。一种便捷的方法是在 `<a>` 元素的 `click` 处理器内部使用 [`preloadData`]($app-navigation#preloadData)。如果该元素（或某个父元素）使用了 [`data-sveltekit-preload-data`](link-options#data-sveltekit-preload-data)，那么数据将已经被请求，`preloadData` 会复用该请求。
+为此，你需要加载 `+page.svelte` 所期望的数据。一种方便的方法是在 `<a>` 元素的 `click` 处理程序中使用 [`preloadData`]($app-navigation#preloadData)。如果该元素（或父元素）使用了 [`data-sveltekit-preload-data`](link-options#data-sveltekit-preload-data)，那么数据已经请求过了，`preloadData` 会复用该请求。
 
 ```svelte
 <!--- file: src/routes/photos/+page.svelte --->
 <script>
-	import { preloadData, pushState, goto } from '$app/navigation';
+	import { preloadData, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Modal from './Modal.svelte';
 	import PhotoPage from './[id]/+page.svelte';
@@ -58,25 +138,25 @@ SvelteKit 通过 [`pushState`]($app-navigation#pushState) 和 [`replaceState`]($
 	<a
 		href="/photos/{thumbnail.id}"
 		onclick={async (e) => {
-			if (innerWidth < 640        // bail if the screen is too small
-				|| e.shiftKey             // or the link is opened in a new window
-				|| e.metaKey || e.ctrlKey // or a new tab (mac: metaKey, win/linux: ctrlKey)
-				// should also consider clicking with a mouse scroll wheel
+			if (innerWidth < 640        // 屏幕太小时退出
+				|| e.shiftKey             // 或者链接在新窗口中打开
+				|| e.metaKey || e.ctrlKey // 或者在新标签页中打开（mac: metaKey，win/linux: ctrlKey）
+				// 还应该考虑使用鼠标滚轮点击
 			) return;
 
-			// prevent navigation
+			// 阻止导航
 			e.preventDefault();
 
 			const { href } = e.currentTarget;
 
-			// run `load` functions (or rather, get the result of the `load` functions
-			// that are already running because of `data-sveltekit-preload-data`)
+			// 运行 `load` 函数（或者更确切地说，获取由于 `data-sveltekit-preload-data`
+			// 已经在运行的 `load` 函数的结果）
 			const result = await preloadData(href);
 
 			if (result.type === 'loaded' && result.status === 200) {
-				pushState(href, { selected: result.data });
+				goto(href, { shallow: true, state: { selected: result.data } });
 			} else {
-				// something bad happened! try navigating
+				// 出了点问题！尝试导航
 				goto(href);
 			}
 		}}
@@ -87,8 +167,8 @@ SvelteKit 通过 [`pushState`]($app-navigation#pushState) 和 [`replaceState`]($
 
 {#if page.state.selected}
 	<Modal onclose={() => history.back()}>
-		<!-- pass page data to the +page.svelte component,
-		     just like SvelteKit would on navigation -->
+		<!-- 将页面数据传递给 +page.svelte 组件，
+		     就像 SvelteKit 在导航时所做的那样 -->
 		<PhotoPage data={page.state.selected} />
 	</Modal>
 {/if}
@@ -96,6 +176,6 @@ SvelteKit 通过 [`pushState`]($app-navigation#pushState) 和 [`replaceState`]($
 
 ## 注意事项
 
-在服务器端渲染期间，`page.state` 始终是一个空对象。用户着陆的第一个页面也是如此 —— 如果用户重新加载页面（或从另一个文档返回），在他们导航之前状态*不会*被应用。
+浅路由需要 JavaScript。使用时请留意，并尽量考虑在 JavaScript 不可用时的合理回退行为。
 
-浅层路由是一个需要 JavaScript 才能工作的功能。使用它时请留意，并尽量在 JavaScript 不可用的情况下考虑合理的回退行为。
+服务器对历史状态一无所知。因此，在 SSR 期间 `page.state` 是空对象，重新加载会直接导航到之前的 `page.shallow.url`（如果存在的话）。换句话说，如果重新加载前 `page.shallow.url.pathname` 是 `/photos/123`，那么重新加载后 `page.url.pathname` 将是 `/photos/123`，而 `page.shallow` 将是 `null`，无论 `persistState` 选项如何。（这只适用于初始页面加载，以避免客户端应用启动时 UI 闪烁。）

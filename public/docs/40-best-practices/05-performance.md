@@ -49,7 +49,25 @@ Google 的 [PageSpeed Insights](https://pagespeed.web.dev/) 以及（用于更�
 
 ### 字体
 
-SvelteKit 在用户访问页面时会自动预加载关键的 `.js` 和 `.css` 文件，但默认_不会_预加载字体，因为这可能导致下载不必要的文件（例如被你的 CSS 引用但当前页面并未实际使用的字重）。话虽如此，正确地预加载字体可以对你站点的"速度感"产生很大影响。在你的 [`handle`](hooks#Server-hooks-handle) 钩子中，你可以调用 `resolve` 并传入一个包含你字体的 `preload` 过滤器。
+SvelteKit 在用户访问页面时会自动预加载关键的 `.js` 和 `.css` 文件，但默认_不会_预加载字体，因为这可能导致下载不必要的文件（例如被你的 CSS 引用但当前页面并未实际使用的字重）。话虽如此，正确地预加载字体可以对你站点的"速度感"产生很大影响。在你的 [`handle`](hooks#handle) 钩子中，你可以调用 `resolve` 并传入一个包含你字体的 `preload` 过滤器：
+
+```js
+/// file: src/hooks.server.js
+/** @type {import('@sveltejs/kit/hooks').Handle} */
+export async function handle({ event, resolve }) {
+	return resolve(event, {
+		preload: (asset) => {
+			if (asset.type === 'font') {
+				return asset.filename === 'node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2';
+			}
+
+			return true;
+		}
+	});
+}
+```
+
+`filename` 是相对于项目根目录的源文件名，并且仅在 `asset.type === 'font'` 时可用，因为 JS 和 CSS 资源是由 Vite 打包的。
 
 你可以通过[子集化](https://web.dev/learn/performance/optimize-web-fonts#subset_your_web_fonts)字体来减小字体文件的大小。
 
@@ -67,7 +85,7 @@ SvelteKit 在用户访问页面时会自动预加载关键的 `.js` 和 `.css` �
 
 尽量减少浏览器中运行的第三方脚本数量。例如，与其使用基于 JavaScript 的分析，不如考虑使用服务端实现，例如许多带有 SvelteKit 适配器的平台所提供的，包括 [Cloudflare](https://www.cloudflare.com/web-analytics/)、[Netlify](https://docs.netlify.com/monitor-sites/site-analytics/) 和 [Vercel](https://vercel.com/docs/analytics)。
 
-要在 Web Worker 中运行第三方脚本（以避免阻塞主线程），请使用 [Partytown 的 SvelteKit 集成](https://partytown.builder.io/sveltekit)。
+要在 Web Worker 中运行第三方脚本（以避免阻塞主线程），请使用 [Partytown 的 SvelteKit 集成](https://partytown.qwik.dev/sveltekit/)。
 
 ### 选择性加载
 

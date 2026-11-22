@@ -6,13 +6,16 @@ title: 适配器
 
 官方适配器适用于各种平台——这些在以下页面中有文档说明：
 
-- 用于 Cloudflare Workers 和 Cloudflare Pages 的 [`@sveltejs/adapter-cloudflare`](adapter-cloudflare)
+- 用于 Cloudflare Workers 的 [`@sveltejs/adapter-cloudflare`](adapter-cloudflare)
+- 用于 Bun 服务器的 [`@sveltejs/adapter-bun`](adapter-bun)
 - 用于 Netlify 的 [`@sveltejs/adapter-netlify`](adapter-netlify)
 - 用于 Node 服务器的 [`@sveltejs/adapter-node`](adapter-node)
 - 用于静态站点生成（SSG）的 [`@sveltejs/adapter-static`](adapter-static)
 - 用于 Vercel 的 [`@sveltejs/adapter-vercel`](adapter-vercel)
 
 还存在用于其他平台的[社区提供的适配器](/packages#sveltekit-adapters)。
+
+运行 [`npx sv add sveltekit-adapter`](/docs/cli/sveltekit-adapter) 来安装适配器并将其添加到你的配置中。
 
 ## 使用适配器
 

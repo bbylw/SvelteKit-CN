@@ -6,25 +6,25 @@ title: 错误处理
 
 ## 错误对象
 
-SvelteKit 区分预期错误和意外错误，两者默认都表示为简单的 `{ status: number, message: string }` 对象。
+每个错误在渲染之前都会经过 [`handleError`](hooks#handleError) 钩子——该钩子可以记录错误并自定义错误。钩子的 `kind` 属性标识错误来自哪里：你的应用（`'app'`）、SvelteKit（`'framework'`）、[远程函数](remote-functions) 参数校验（`'validation'`）或未知来源（`'unknown'`）。默认情况下，它们都表示为简单的 `{ status: number, message: string }` 对象。
 
 你可以添加额外的属性，比如 `code` 或跟踪 `id`，如下面的示例所示。（使用 TypeScript 时，这需要你按照[类型安全](errors#Type-safety)中描述的方式重新定义 `Error` 类型。）
 
-## 预期错误
+## 应用错误
 
-*预期*错误是使用从 `@sveltejs/kit` 导入的 [`error`](@sveltejs-kit#error) 辅助函数创建的错误：
+应用错误是在你的应用代码中使用从 `@sveltejs/kit` 导入的 [`error`](@sveltejs-kit#error) 函数抛出的错误：
 
 ```js
 /// file: src/routes/blog/[slug]/+page.server.js
 // @filename: ambient.d.ts
-declare module '#lib/server/database' {
+declare module '#lib/server/database.js' {
 	export function getPost(slug: string): Promise<{ title: string, content: string } | undefined>
 }
 
 // @filename: index.js
 // ---cut---
 import { error } from '@sveltejs/kit';
-import * as db from '#lib/server/database';
+import * as db from '#lib/server/database.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params }) {
@@ -71,38 +71,57 @@ error(404, 'Not found', {
 });
 ```
 
+在到达那里的途中，错误会以 `kind: 'app'` 经过 [`handleError`](hooks#handleError) 钩子。由于错误的形状由你的应用决定，它被认为可以安全暴露，钩子可以原样传递它。
+
 > [!NOTE] [在 SvelteKit 1.x 中](migrating-to-sveltekit-2#redirect-and-error-are-no-longer-thrown-by-you)，你必须自己 `throw` 这个 `error`
 
-## 意外错误
+## 框架错误
 
-*意外*错误是处理请求时发生的任何其他异常。由于这些错误可能包含敏感信息，意外错误的消息和堆栈跟踪不会暴露给用户。
+有些错误是 SvelteKit 本身而非你的代码生成的——不匹配任何路由的请求（404）、向没有表单操作的页面发送 `POST` 请求（405）、超出大小限制的请求体（413）等等。
 
-默认情况下，意外错误会被打印到控制台（或在生产环境中打印到你的服务器日志），而暴露给用户的错误则具有通用形状：
+这些错误也会经过 `handleError`，`kind` 为 `'framework'`。你收到的 `error` 是一个 `{ status, message }` 对象，其中 `message` 是对出错原因的简短但安全的描述，例如 `'Not Found'`，因此可以原样暴露给用户。
+
+如果你在 `handleError` 中记录错误，请记住像 404 这样的框架错误是常规情况——通常你会希望避免记录它们。
+
+## 校验错误
+
+当[远程函数](remote-functions) 被传入无效数据时，就会发生校验错误。当这些错误被传给 `handleError` 时，会附带一个 `issues` 数组。详情请参阅[处理校验错误](remote-functions#Handling-validation-errors)。
+
+## 未知错误
+
+*未知*错误是处理请求时发生的任何其他异常。由于这些错误可能包含敏感信息，未知错误的消息和堆栈跟踪不会暴露给用户。
+
+默认情况下，未知错误会被打印到控制台（或在生产环境中打印到你的服务器日志），而暴露给用户的错误则具有通用形状：
 
 ```json
 { "status": 500, "message": "Internal Error" }
 ```
 
-意外错误会经过 [`handleError`](hooks#Shared-hooks-handleError) hook，你可以在其中添加自己的错误处理 —— 例如，将错误发送到报告服务，或返回一个自定义错误对象，该对象会成为传递给 `+error.svelte` 的 `error` prop。
+未知错误会以 `kind: 'unknown'` 经过 [`handleError`](hooks#handleError) 钩子，因为 SvelteKit 不知道出了什么问题。你可以在其中添加自己的错误处理，例如将错误发送到报告服务，或返回一个自定义错误对象，该对象会成为传递给 `+error.svelte` 的 `error` prop。你收到的是原始的抛出值，除非你选择暴露，否则它不会暴露任何信息。
 
-你可以通过返回一个 `status` 属性来覆盖响应中使用的 HTTP 状态码：
+你返回的任何内容都会覆盖默认值，因此你可以——例如——使用抛出错误的类型来确定响应中使用的 HTTP 状态码：
 
 ```js
 /// file: src/hooks.server.js
 // Assuming you have this ...
 class NotFound extends Error {}
 
-/** @type {import('@sveltejs/kit').HandleServerError} */
-export function handleError({ error, event, status, message }) {
-	// ... you can do this
-	if (error instanceof NotFound) {
-		return {
-			status: 404,
-			message: 'Not found'
-		};
+/** @type {import('@sveltejs/kit/hooks').HandleServerError} */
+export function handleError({ kind, error, event }) {
+	if (kind === 'unknown') {
+		// ... 你可以这样做
+		if (error instanceof NotFound) {
+			return {
+				status: 404,
+				message: 'Not found'
+			};
+		}
+
+		return { message: 'Something went wrong' };
 	}
 
-	return { message: 'Something went wrong' };
+	// 应用错误和框架错误已经可以安全暴露
+	return error;
 }
 ```
 

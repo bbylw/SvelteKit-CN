@@ -33,7 +33,7 @@ export const prerender = 'auto';
 
 > [!NOTE] 如果你的整个应用都适合预渲染，你可以使用 [`adapter-static`](adapter-static)，它会输出适用于任何静态 Web 服务器的文件。
 
-预渲染器会从你应用的根开始，为它发现的任何可预渲染页面或 `+server.js` 路由生成文件。每个页面都会被扫描以查找指向其他可预渲染候选页面的 `<a>` 元素——因此，你通常不需要指定应该访问哪些页面。如果你_确实_需要指定预渲染器应该访问哪些页面，可以通过 [`config.prerender.entries`](configuration#prerender)，或者从动态路由导出一个 [`entries`](#entries) 函数来实现。
+预渲染器会从你应用的根开始，为它发现的任何可预渲染页面或 `+server.js` 路由生成文件。每个页面都会被扫描以查找指向其他可预渲染候选页面的 `<a>` 元素——因此，你通常不需要指定应该访问哪些页面。如果你_确实_需要指定预渲染器应该访问哪些页面，可以通过 [`config.prerender.entries`](@sveltejs-kit-vite#prerender)，或者从动态路由导出一个 [`entries`](#entries) 函数来实现。
 
 在预渲染期间，从 [`$app/env`]($app-env) 导入的 `building` 的值将为 `true`。
 
@@ -80,7 +80,7 @@ export async function load({ fetch }) {
 
 由于这些路由无法被动态服务器端渲染，当人们尝试访问相关路由时会导致错误。有几种方法可以修复它：
 
-* 确保 SvelteKit 能通过从 [`config.prerender.entries`](configuration#prerender) 或 [`entries`](#entries) 页面选项跟踪链接来找到该路由。如果动态路由（即带有 `[参数]` 的页面）无法通过爬取其他入口点找到，请将它们添加到此选项中，否则它们不会被预渲染，因为 SvelteKit 不知道参数应该取什么值。未被标记为可预渲染的页面将被忽略，并且它们到其他页面的链接也不会被爬取，即使其中某些页面可能是可预渲染的。
+* 确保 SvelteKit 能通过从 [`config.prerender.entries`](@sveltejs-kit-vite#prerender) 或 [`entries`](#entries) 页面选项跟踪链接来找到该路由。如果动态路由（即带有 `[参数]` 的页面）无法通过爬取其他入口点找到，请将它们添加到此选项中，否则它们不会被预渲染，因为 SvelteKit 不知道参数应该取什么值。未被标记为可预渲染的页面将被忽略，并且它们到其他页面的链接也不会被爬取，即使其中某些页面可能是可预渲染的。
 * 确保 SvelteKit 能通过从你的其他启用了服务器端渲染的预渲染页面中发现指向它的链接来找到该路由。
 * 将 `export const prerender = true` 改为 `export const prerender = 'auto'`。带有 `'auto'` 的路由可以进行动态服务器端渲染。
 
@@ -98,7 +98,7 @@ SvelteKit 会从_入口点_开始并爬取它们，自动发现要预渲染的�
 
 大多数时候，这就足够了。在某些情况下，指向像 `/blog/hello-world` 这样页面的链接可能不存在（或者在预渲染页面上不存在），在这种情况下我们需要告诉 SvelteKit 它们的存在。
 
-这可以通过 [`config.prerender.entries`](configuration#prerender)，或者从属于动态路由的 `+page.js`、`+page.server.js` 或 `+server.js` 导出一个 `entries` 函数来完成：
+这可以通过 [`config.prerender.entries`](@sveltejs-kit-vite#prerender)，或者从属于动态路由的 `+page.js`、`+page.server.js` 或 `+server.js` 导出一个 `entries` 函数来完成：
 
 ```js
 /// file: src/routes/blog/[slug]/+page.server.js

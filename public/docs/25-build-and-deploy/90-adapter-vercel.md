@@ -4,11 +4,13 @@ title: Vercel
 
 要部署到 Vercel，请使用 [`adapter-vercel`](https://github.com/sveltejs/kit/tree/main/packages/adapter-vercel)。
 
+如果你想在 Vercel 上试用 SvelteKit，可以从某个 [Vercel SvelteKit 模板](https://vercel.com/templates/svelte?search=SvelteKit) 开始。
+
 当你使用 [`adapter-auto`](adapter-auto) 时，这个适配器会默认被安装，但将其添加到你的项目中允许你指定特定于 Vercel 的选项。
 
 ## 用法
 
-用 `npm i -D @sveltejs/adapter-vercel` 安装，然后将适配器添加到你的 `vite.config.js`：
+运行 [`npx sv add sveltekit-adapter="adapter:vercel"`](/docs/cli/sveltekit-adapter)，或者用 `npm i -D @sveltejs/adapter-vercel` 安装，然后将适配器添加到你的 `vite.config.js`：
 
 ```js
 // @errors: 2554
@@ -42,17 +44,11 @@ export const config = {
 };
 ```
 
-以下选项适用于所有函数：
+你可以设置以下选项：
 
-- `runtime`：`'edge'`、`'nodejs20.x'` 或 `'nodejs22.x'`。默认情况下，适配器会选择与你的项目在 Vercel 仪表板上配置使用的 Node 版本相对应的 `'nodejs<version>.x'`
-  > [!NOTE] 这个选项已被弃用，并将在未来版本中移除，届时你的所有函数都将使用 Vercel 上项目配置中指定的任何 Node 版本
-- `regions`：[边缘网络区域](https://vercel.com/docs/concepts/edge-network/regions) 的数组（对于无服务器函数默认为 `["iad1"]`，或者如果 `runtime` 是 `edge`（其默认值）则为 `'all'`）。请注意，无服务器函数的多个区域仅在 Enterprise 套餐上受支持
+- `runtime`：Node 版本（例如 `'nodejs22.x'`、`'nodejs24.x'`、`'nodejs26.x'`）、`bun1.x` 或 `bun1.4.x`。默认情况下，适配器会选择用于构建的运行时，它与你项目在 Vercel 仪表板上配置使用的 Node 版本相对应，除非你[使用 Bun 构建应用](https://bun.com/docs/guides/ecosystem/vite)
+- `regions`：[边缘网络区域](https://vercel.com/docs/concepts/edge-network/regions) 的数组（默认为 `["iad1"]`）。请注意，无服务器函数的多个区域仅在 Enterprise 套餐上受支持
 - `split`：如果为 `true`，会导致一个路由被部署为一个独立的函数。如果在适配器级别将 `split` 设为 `true`，所有路由都将被部署为独立的函数
-
-此外，以下选项适用于边缘函数：
-- `external`：一个依赖项数组，Rolldown 在打包函数时应将其视为外部依赖。这只应用于排除不会在 Node 之外运行的可选依赖
-
-以下选项适用于无服务器函数：
 - `memory`：函数可用的内存量。默认为 `1024` Mb，可以降到 `128` Mb，或在 Pro 或 Enterprise 账户上[增加到](https://vercel.com/docs/concepts/limits/overview#serverless-function-memory) 以 64Mb 为增量最高到 `3008` Mb
 - `maxDuration`：函数的[最大执行时长](https://vercel.com/docs/functions/runtimes#max-duration)。Hobby 账户默认为 `10` 秒，Pro 为 `15` 秒，Enterprise 为 `900` 秒
 - `isr`：增量静态再生配置，如下所述
@@ -125,9 +121,12 @@ export const config = {
 
 ### bypassToken
 
-一个随机 token，可以在 URL 中提供以绕过资源的缓存版本，方法是通过请求带有 `__prerender_bypass=<token>` cookie 的资源。
+一个随机 token，可用于两件事：
 
-使用 `x-prerender-revalidate: <token>` 发起一个 `GET` 或 `HEAD` 请求将强制资源被重新验证。
+- 草稿模式（Draft mode），它会绕过缓存，因此你可以在编辑时查看来自 CMS 的实时内容。在 `__prerender_bypass=<token>` cookie 中发送该 token，即可在请求时渲染该路由。更多详情请参阅 [Vercel 的草稿模式文档](https://vercel.com/docs/draft-mode?framework=sveltekit)。
+- 重新验证（Revalidation），它会清空该路由的 ISR 缓存，并为未来的访客重新填充。为此，请发送一个带有 `x-prerender-revalidate: <token>` 头的 `GET` 或 `HEAD` 请求。
+
+`BYPASS_TOKEN` 在构建时保存；在应用构建后再设置或更改它需要重新部署。
 
 请注意，`BYPASS_TOKEN` 字符串必须至少 32 个字符长。你可以通过 JavaScript 控制台像这样生成一个：
 
@@ -205,16 +204,14 @@ export function load() {
 
 在某个日期之前创建的项目可能默认使用比 SvelteKit 当前要求的更旧的 Node 版本。你可以[在你的项目设置中更改 Node 版本](https://vercel.com/docs/concepts/functions/serverless-functions/runtimes/node-js#node.js-version)。
 
+### 更多信息
+
+你可以在 [Vercel 文档](https://vercel.com/docs/frameworks/full-stack/sveltekit) 中找到关于如何在 Vercel 上使用 SvelteKit 的更多信息。
+
 ## 故障排除
 
 ### 访问文件系统
 
-你不能在边缘函数中使用 `fs`。
-
-你_可以_在无服务器函数中使用它，但它不会按预期工作，因为文件不会从你的项目复制到你的部署中。相反，请使用来自 `$app/server` 的 [`read`]($app-server#read) 函数来访问你的文件。它也可以通过从已部署的公共资源位置获取文件，在部署为边缘函数的路由内工作。
+直接在无服务器函数中使用 `node:fs` 很可能不会按你的预期工作，因为文件不会从你的项目复制到你的部署中。相反，请使用来自 `$app/server` 的 [`read`]($app-server#read) 函数来访问你的文件。
 
 或者，你可以[预渲染](page-options#prerender) 相关的路由。
-
-### 部署保护
-
-如果在边缘函数中使用 [`read`]($app-server#read)，SvelteKit 将从你的部署中 `fetch` 相关文件。如果你正在使用 [Deployment Protection](https://vercel.com/docs/deployment-protection)（部署保护），你也必须启用 [Protection Bypass for Automation](https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation)（用于自动化的保护绕过），以便该请求不会导致 [401 Unauthorized](https://http.dog/401) 响应。

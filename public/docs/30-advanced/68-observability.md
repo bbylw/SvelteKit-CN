@@ -8,7 +8,8 @@ title: 可观测性
 
 有时，你可能需要观察应用的行为方式，以便改进性能或找到令人头疼的 bug 的根本原因。为帮助解决这个问题，SvelteKit 可以为以下内容发出服务器端的 [OpenTelemetry](https://opentelemetry.io) span：
 
-- [`handle`](hooks#Server-hooks-handle) hook 以及在 [`sequence`](@sveltejs-kit-hooks#sequence) 中运行的 `handle` 函数（这些会显示为彼此以及根 `handle` hook 的子级）
+- [`handle`](hooks#handle) hook 以及在 [`sequence`](@sveltejs-kit-hooks#sequence) 中运行的 `handle` 函数（这些会显示为彼此以及根 `handle` hook 的子级）
+- [`+server`](routing#server) 处理程序
 - 服务器 [`load`](load) 函数，以及在服务器上运行的通用 `load` 函数
 - [表单操作](form-actions)
 - [远程函数](remote-functions)
@@ -37,20 +38,20 @@ export default defineConfig({
 
 ## 增强内置追踪
 
-SvelteKit 在请求事件上提供了对 `root` span 和 `current` span 的访问。root span 是与你的根 `handle` 函数相关联的那个，而 current span 可能与 `handle`、`load`、表单操作或远程函数相关联，具体取决于上下文。你可以用任何你希望记录的属性来标注这些 span：
+SvelteKit 在请求事件上提供了对 `root` span 和 `current` span 的访问。root span 是与你的根 `handle` 函数相关联的那个，而 current span 可能与 `handle`、`load`、表单操作、`+server` 处理程序或远程函数相关联，具体取决于上下文。你可以用任何你希望记录的属性来标注这些 span：
 
 ```js
 /// file: #lib/authenticate.ts
 
 // @filename: ambient.d.ts
-declare module '#lib/auth-core' {
+declare module '#lib/auth-core.js' {
 	export function getAuthenticatedUser(): Promise<{ id: string }>
 }
 
 // @filename: index.js
 // ---cut---
 import { getRequestEvent } from '$app/server';
-import { getAuthenticatedUser } from '#lib/auth-core';
+import { getAuthenticatedUser } from '#lib/auth-core.js';
 
 async function authenticate() {
 	const user = await getAuthenticatedUser();
@@ -126,3 +127,47 @@ sdk.start();
 ## `@opentelemetry/api`
 
 SvelteKit 使用 `@opentelemetry/api` 来生成它的 span。它被声明为一个可选的 peer dependency，这样不需要追踪的用户就不会在安装体积或运行时性能上受到影响。在大多数情况下，如果你正在配置应用来收集 SvelteKit 的 span，你最终会安装像 `@opentelemetry/sdk-node` 或 `@vercel/otel` 这样的库，它们又依赖于 `@opentelemetry/api`，这也会满足 SvelteKit 的依赖。如果你看到 SvelteKit 报错说找不到 `@opentelemetry/api`，可能只是因为你还没有设置追踪收集。如果你*已经*设置了但仍然看到该错误，你可以自己安装 `@opentelemetry/api`。
+
+## 打包注意事项
+
+OpenTelemetry 自动插桩通常通过拦截导入，并用经过插桩的版本替换或包装模块的导出来工作。上面的示例中 `import-in-the-middle` 就是这样做的。由于 ESM 模块导出是不可变的，拦截器必须在被插桩的模块求值之前安装。这就是 `instrumentation.server.js` 是特殊入口点的原因：SvelteKit 会安排它在动态导入你的应用代码之前运行。预期的顺序是：
+
+1. `instrumentation.server.js` 为 `my-database-library` 注册一个拦截器
+2. 你的应用导入 `my-database-library`
+3. 拦截器观察到该导入并返回经过插桩的导出
+
+打包可能会以两种方式破坏这个顺序。
+
+首先，打包器可能会把 `instrumentation.server.js` 导入的代码和应用代码放进同一个共享 chunk。为了初始化插桩而导入该 chunk，可能会在拦截器安装之前就求值应用代码。等到动态导入应用时，该模块已经在 ESM 模块缓存中，再对它插桩就太晚了。
+
+还有一个不可避免的先后顺序限制：导入 [`$app/env/*` 模块](environment-variables) 会求值你的 `src/env.js` 模块及其依赖。因此，插桩无法拦截 `src/env` 导入的模块，因为该被导入的模块必须在 `instrumentation.server.js` 启动之前运行。所以，你应该避免从 `src/env.js` 导入任何需要插桩的内容。
+
+其次，打包器可能会内联或转换你想要插桩的模块。例如，它可能把下面这段：
+
+```js
+// @errors: 2307 example library
+import { query } from 'my-database-library';
+```
+
+替换为直接嵌入应用 chunk 的代码，或者替换为 `import { query } from './chunks/abc.js'` 这样的导入。运行时就不再存在可让拦截器观察的 `my-database-library` 导入。Tree-shaking 和导出重写也可能以该模块的 OpenTelemetry 插桩无法识别的方式改变模块的形状。
+
+SvelteKit 会自动将 `@opentelemetry/api` 外部化，以便它的运行时和你的插桩共享同一个模块实例。如果另一个库没有按预期被插桩，请让 Vite 将该库排除在服务器打包之外：
+
+```js
+/// file: vite.config.js
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+	plugins: [sveltekit()],
+	ssr: {
+		external: ['my-database-library']
+	}
+});
+```
+
+外部化会在服务器输出中保留裸导入 `my-database-library`。然后 Node.js 会在 `instrumentation.server.js` 注册拦截器之后于运行时加载该包，从而给插桩一个包装它的机会。请将被插桩的包以及其导入必须对插桩可见的任何包外部化。不要外部化应用源文件，也不要无差别地外部化依赖，因为这样做可能会改变它们的解析和部署方式。
+
+运行时需要的依赖必须列在 `dependencies` 而不是 `devDependencies` 中，以便它们在部署的应用中可用。`adapter-node` 在打包 Vite 输出时也会使用这种区分：它会自动将 `dependencies` 中列出的包（包括它们的深层导入）保留在该最终包之外。你可能仍然需要 `ssr.external` 来防止 Vite 在较早的 SSR 构建期间打包某个包。
+
+其他官方适配器本身不会应用同样的基于 `dependencies` 的外部化规则。一些适配器或部署平台会执行自己的追踪或打包步骤，而另一些则根本不支持运行时包导入。在这些环境中，Vite 的 `ssr.external` 设置可能不够或不支持。请查阅适配器或平台的文档，以确认该依赖可以保持外部化。

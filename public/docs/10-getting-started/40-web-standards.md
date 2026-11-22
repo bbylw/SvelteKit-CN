@@ -4,15 +4,13 @@ title: Web 标准
 
 在本文档中，你会看到对 SvelteKit 所基于的标准 [Web APIs](https://developer.mozilla.org/en-US/docs/Web/API) 的引用。我们没有重复造轮子，而是_利用平台本身_，这意味着你现有的 Web 开发技能也适用于 SvelteKit。反过来，花在学习 SvelteKit 上的时间也有助于你在其他地方成为更好的 Web 开发者。
 
-这些 API 在所有现代浏览器以及许多非浏览器环境中都可用，比如 Cloudflare Workers、Deno 和 Vercel Functions。在开发期间，以及在用于基于 Node 环境（包括 AWS Lambda）的[适配器](adapters) 中，它们会通过 polyfill（必要填充）在需要时被提供（目前是这样——Node 正在迅速添加对更多 Web 标准的支持）。
-
-特别是，你会对以下内容感到熟悉：
+这些 API 在所有现代浏览器以及许多非浏览器环境中都可用，比如 Cloudflare Workers、Deno 和 Vercel Functions。特别是，你会对以下内容感到熟悉：
 
 ## Fetch API
 
 SvelteKit 使用 [`fetch`](https://developer.mozilla.org/en-US/docs/Web/API/fetch) 从网络获取数据。它在[钩子](hooks)、[服务器路由](routing#server) 以及浏览器中都可用。
 
-> [!NOTE] 在 [`load`](load) 函数、[服务器钩子](hooks#Server-hooks)、[API 路由](routing#server) 和[远程函数](remote-functions) 中，有一个特殊的 `fetch` 版本可用，用于在服务器端渲染期间直接调用端点，而无需发起 HTTP 请求，同时保留凭据。（要在 `load` 之外的服务器端代码中进行带凭据的 fetch，你必须显式传递 `cookie` 和/或 `authorization` 头。）它还允许你发起相对请求，而服务器端 `fetch` 通常需要完整的 URL。
+> [!NOTE] 在 [`load`](load) 函数、[服务器钩子](hooks)、[API 路由](routing#server) 和[远程函数](remote-functions) 中，有一个特殊的 `fetch` 版本可用，用于在服务器端渲染期间直接调用端点，而无需发起 HTTP 请求，同时保留凭据。（要在 `load` 之外的服务器端代码中进行带凭据的 fetch，你必须显式传递 `cookie` 和/或 `authorization` 头。）它还允许你发起相对请求，而服务器端 `fetch` 通常需要完整的 URL。
 
 除了 `fetch` 本身，[Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) 还包含以下接口：
 
@@ -26,20 +24,18 @@ SvelteKit 使用 [`fetch`](https://developer.mozilla.org/en-US/docs/Web/API/fetc
 
 ### Headers
 
-[`Headers`](https://developer.mozilla.org/en-US/docs/Web/API/Headers) 接口允许你读取传入的 `request.headers` 并设置传出的 `response.headers`。例如，你可以如下所示获取 `request.headers`，并使用 [`json` 便捷函数](@sveltejs-kit#json) 发送修改后的 `response.headers`：
+[`Headers`](https://developer.mozilla.org/en-US/docs/Web/API/Headers) 接口允许你读取传入的 `request.headers` 并设置传出的 `response.headers`。例如，你可以如下所示获取 `request.headers`，并使用 [`Response.json`](https://developer.mozilla.org/en-US/docs/Web/API/Response/json_static) 发送修改后的 `response.headers`：
 
 ```js
 // @errors: 2461
 /// file: src/routes/what-is-my-user-agent/+server.js
-import { json } from '@sveltejs/kit';
-
 /** @type {import('./$types').RequestHandler} */
 export function GET({ request }) {
 	// 记录所有请求头
 	console.log(...request.headers);
 
 	// 使用我们收到的请求头创建一个 JSON 响应
-	return json({
+	return Response.json({
 		// 获取特定的请求头
 		userAgent: request.headers.get('user-agent')
 	}, {
@@ -56,8 +52,6 @@ export function GET({ request }) {
 ```js
 // @errors: 2461
 /// file: src/routes/hello/+server.js
-import { json } from '@sveltejs/kit';
-
 /** @type {import('./$types').RequestHandler} */
 export async function POST(event) {
 	const body = await event.request.formData();
@@ -65,7 +59,7 @@ export async function POST(event) {
 	// 记录所有字段
 	console.log([...body]);
 
-	return json({
+	return Response.json({
 		// 获取特定字段的值
 		name: body.get('name') ?? 'world'
 	});
@@ -99,7 +93,7 @@ const foo = url.searchParams.get('foo');
 
 ## Web Crypto
 
-[Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) 通过 `crypto` 全局对象提供。它在内部用于[内容安全策略（CSP）](configuration#csp) 请求头，但你也可以用它来做诸如生成 UUID 之类的事情：
+[Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) 通过 `crypto` 全局对象提供。它在内部用于[内容安全策略（CSP）](@sveltejs-kit-vite#csp) 请求头，但你也可以用它来做诸如生成 UUID 之类的事情：
 
 ```js
 const uuid = crypto.randomUUID();

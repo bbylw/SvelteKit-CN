@@ -13,6 +13,8 @@ type AdapterSpecificOptions = any;
 
 // @filename: index.js
 // ---cut---
+import { getRequest, setResponse } from '@sveltejs/kit/node';
+
 /** @param {AdapterSpecificOptions} options */
 export default function (options) {
 	/** @type {import('@sveltejs/kit').Adapter} */
@@ -20,14 +22,6 @@ export default function (options) {
 		name: 'adapter-package-name',
 		async adapt(builder) {
 			// 适配器实现
-		},
-		async emulate() {
-			return {
-				async platform({ config, prerender }) {
-					// 返回的对象在开发、构建和预览期间成为 `event.platform`。
-					// 它的形状是 `App.Platform` 的形状
-				}
-			}
 		},
 		supports: {
 			read: ({ config, route }) => {
@@ -42,9 +36,22 @@ export default function (options) {
 			}
 		},
 		vite: {
-			plugins: [
+			// 设为 `true` 以在 `vite preview` 期间禁用默认的 Node 服务器
+			customPreview: false,
+			getRequest(options) {
+				const request = getRequest(options);
+				// 如果需要，在此修改 Request 对象
+				return request;
+			},
+			setResponse(res, response) {
+				// 例如在此处理 WebSocket
+				setResponse(res, response);
+			},
+			plugins: {
 				// 在此添加插件以与 Vite 集成
-			]
+				pre: [],
+				post: []
+			}
 		}
 	};
 
@@ -52,15 +59,15 @@ export default function (options) {
 }
 ```
 
-其中，`name` 和 `adapt` 是必需的。`emulate`、`vite.plugins` 和 `supports` 是可选的。
+其中，`name` 和 `adapt` 是必需的。`vite` 和 `supports` 是可选的。
 
 在 `adapt` 方法中，适配器应该做以下几件事：
 
 - 清空构建目录
 - 用 `builder.writeClient`、`builder.writeServer` 和 `builder.writePrerendered` 写入 SvelteKit 输出
 - 输出代码，该代码：
-	- 从 `${builder.getServerDirectory()}/index.js` 导入 `Server`
-	- 用 `builder.generateManifest({ relativePath })` 生成的清单实例化应用
+	- 从 `${builder.generateServerInstance()}` 导入生成的 `server` 实例
+	- 运行 `await server.init({ env, read })`
 	- 监听来自平台的请求，如有必要将其转换为标准的 [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)，调用 `server.respond(request, { getClientAddress })` 函数以生成 [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) 并对其作出响应
 	- 通过传给 `server.respond` 的 `platform` 选项，将任何平台特定的信息暴露给 SvelteKit
 - 如有必要，打包输出，以避免需要在目标平台上安装依赖

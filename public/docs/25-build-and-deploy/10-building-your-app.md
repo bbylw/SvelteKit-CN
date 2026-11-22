@@ -14,7 +14,7 @@ SvelteKit 会在构建期间加载你的 `+page/layout(.server).js` 文件（以
 
 ```js
 +++import { building } from '$app/env';+++
-import { initialiseDatabase } from '#lib/server/database';
+import { initialiseDatabase } from '#lib/server/database.js';
 
 +++if (!building) {+++
 	initialiseDatabase();
