@@ -10,6 +10,11 @@ const content = ref('')
 const loading = ref(true)
 const error = ref<string | null>(null)
 const articleRef = ref<HTMLElement | null>(null)
+const mainRef = ref<HTMLElement | null>(null)
+
+// 已取回的 markdown 文本缓存，避免重复导航时重新请求
+const docCache = new Map<string, string>()
+let loadToken = 0
 
 // 路由 → markdown 文件路径映射
 const pathMap: Record<string, string> = {
@@ -120,6 +125,9 @@ const updateBreadcrumb = () => {
       break
     }
   }
+  document.title = currentTitle.value
+    ? `${currentTitle.value} · SvelteKit 中文文档`
+    : 'SvelteKit 中文文档'
 }
 
 // 上一篇 / 下一篇
@@ -137,7 +145,8 @@ const prevNext = computed(() => {
   }
 })
 
-const loadDoc = async (path: string) => {
+const loadDoc = async (path: string, focusAfterLoad = false) => {
+  const token = ++loadToken
   loading.value = true
   error.value = null
   content.value = ''
@@ -152,32 +161,48 @@ const loadDoc = async (path: string) => {
   }
 
   try {
-    const response = await fetch(filePath)
-    if (!response.ok) throw new Error('文档未找到')
-    const text = await response.text()
+    let text = docCache.get(filePath)
+    if (text === undefined) {
+      const response = await fetch(filePath)
+      if (!response.ok) throw new Error('文档未找到')
+      text = await response.text()
+      docCache.set(filePath, text)
+    }
+    // 快速连续切换路由时，丢弃过期响应
+    if (token !== loadToken) return
     const markdownContent = text.replace(/^---[\s\S]*?---/, '')
     content.value = md.render(markdownContent)
   } catch (err) {
+    if (token !== loadToken) return
     console.error('加载文档失败:', err)
     error.value = '加载文档失败，请稍后重试。'
     content.value = ''
   } finally {
-    loading.value = false
-    await nextTick()
-    if (articleRef.value) articleRef.value.scrollTop = 0
-    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+    if (token === loadToken) {
+      loading.value = false
+      await nextTick()
+      if (articleRef.value) articleRef.value.scrollTop = 0
+      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+      // 路由切换后把焦点交给正文，方便键盘/读屏用户继续阅读
+      if (focusAfterLoad) mainRef.value?.focus()
+    }
   }
 }
 
 onMounted(() => loadDoc(route.path))
-watch(() => route.path, (newPath) => loadDoc(newPath))
+watch(
+  () => route.path,
+  (newPath) => loadDoc(newPath, true),
+)
 </script>
 
 <template>
   <div class="doc-shell">
     <DocsSidebar />
 
-    <main class="doc-main">
+    <a href="#main-content" class="skip-link">跳转到正文</a>
+
+    <main id="main-content" ref="mainRef" class="doc-main" tabindex="-1">
       <div class="doc-scroll" ref="articleRef">
         <!-- 面包屑 -->
         <div class="doc-topbar">
@@ -191,7 +216,8 @@ watch(() => route.path, (newPath) => loadDoc(newPath))
         </div>
 
         <article class="doc-article">
-          <div v-if="loading" class="state loading">
+          <div v-if="loading" class="state loading" role="status" aria-live="polite">
+            <p class="visually-hidden">文档加载中</p>
             <div class="skeleton-lines">
               <span class="sk-line w-60"></span>
               <span class="sk-line w-90"></span>
@@ -202,10 +228,10 @@ watch(() => route.path, (newPath) => loadDoc(newPath))
             </div>
           </div>
 
-          <div v-else-if="error" class="state error-state">
+          <div v-else-if="error" class="state error-state" role="alert">
             <p class="err-eyebrow">出错了</p>
             <p class="err-msg">{{ error }}</p>
-            <button class="btn btn-ghost" @click="loadDoc(route.path)">重新加载</button>
+            <button type="button" class="btn btn-ghost" @click="loadDoc(route.path)">重新加载</button>
           </div>
 
           <div v-else class="markdown-body" v-html="content"></div>
@@ -376,7 +402,7 @@ watch(() => route.path, (newPath) => loadDoc(newPath))
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--flame);
+  color: var(--flame-text);
 }
 
 .err-msg {
@@ -435,7 +461,7 @@ watch(() => route.path, (newPath) => loadDoc(newPath))
 }
 
 .pager-card:hover .pager-label {
-  color: var(--flame);
+  color: var(--flame-text);
 }
 
 .pager-title {
@@ -502,18 +528,21 @@ watch(() => route.path, (newPath) => loadDoc(newPath))
 
 .markdown-body :deep(p) {
   margin: 1rem 0;
+  /* 控制行宽，避免长行影响阅读 */
+  max-inline-size: 72ch;
 }
 
 .markdown-body :deep(a) {
-  color: var(--flame);
+  color: var(--flame-text);
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--flame) 30%, transparent);
+  text-decoration-color: color-mix(in srgb, var(--flame-text) 30%, transparent);
   text-underline-offset: 2px;
   transition: text-decoration-color 0.2s;
 }
 
 .markdown-body :deep(a:hover) {
-  text-decoration-color: var(--flame);
+  color: var(--flame-text);
+  text-decoration-color: var(--flame-text);
 }
 
 .markdown-body :deep(strong) {

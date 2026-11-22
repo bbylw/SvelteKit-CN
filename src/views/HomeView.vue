@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DocsSidebar from '../components/DocsSidebar.vue'
 import { docsStructure } from '../docs-structure'
@@ -58,13 +59,19 @@ const steps = [
 ]
 
 const sections = docsStructure.slice(0, 4)
+
+onMounted(() => {
+  document.title = 'SvelteKit 中文文档'
+})
 </script>
 
 <template>
   <div class="home">
     <DocsSidebar />
 
-    <main class="main">
+    <a href="#main-content" class="skip-link">跳转到正文</a>
+
+    <main id="main-content" class="main" tabindex="-1">
       <!-- ── 英雄区：非对称 ── -->
       <section class="hero">
         <div class="hero-grid">
@@ -79,14 +86,14 @@ const sections = docsStructure.slice(0, 4)
               没有虚拟 DOM 的运行时开销——更小的包体、更快的首屏、更直观的心智模型。
             </p>
             <div class="hero-actions">
-              <button class="btn btn-primary" @click="goToDoc('/getting-started/introduction')">
+              <button type="button" class="btn btn-primary" @click="goToDoc('/getting-started/introduction')">
                 开始使用
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12" />
                   <polyline points="12 5 19 12 12 19" />
                 </svg>
               </button>
-              <button class="btn btn-ghost" @click="goToDoc('/core-concepts/routing')">
+              <button type="button" class="btn btn-ghost" @click="goToDoc('/core-concepts/routing')">
                 浏览文档
               </button>
             </div>
@@ -174,7 +181,7 @@ const sections = docsStructure.slice(0, 4)
           <div class="start-steps">
             <div v-for="(s, i) in steps" :key="s.cmd" class="step">
               <span class="step-num">{{ i + 1 }}</span>
-              <button class="step-cmd" @click="copyToClipboard(s.cmd)">
+              <button type="button" class="step-cmd" @click="copyToClipboard(s.cmd)">
                 <code>{{ s.cmd }}</code>
                 <span class="step-copy">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

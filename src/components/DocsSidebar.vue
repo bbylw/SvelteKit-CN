@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { docsStructure } from '../docs-structure'
 
@@ -8,6 +8,32 @@ const route = useRoute()
 // 移动端抽屉控制
 const isMobileOpen = ref(false)
 const isMobile = ref(false)
+const triggerRef = ref<HTMLButtonElement | null>(null)
+const sidebarRef = ref<HTMLElement | null>(null)
+
+const openMobile = async () => {
+  isMobileOpen.value = true
+  // 焦点移入抽屉，避免停留在已隐藏的触发按钮上
+  await nextTick()
+  sidebarRef.value?.querySelector<HTMLElement>('a, button')?.focus()
+}
+
+// 抽屉打开时让主内容不可交互，避免焦点移到被遮罩的页面
+watch(isMobileOpen, (open) => {
+  if (!isMobile.value) return
+  const main = document.getElementById('main-content')
+  if (main) main.inert = open
+})
+
+// 关闭后把焦点还给触发按钮，避免焦点丢在已隐藏的抽屉里
+const closeMobile = () => {
+  isMobileOpen.value = false
+  triggerRef.value?.focus()
+}
+
+const onKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && isMobileOpen.value) closeMobile()
+}
 
 const checkMobile = () => {
   isMobile.value = window.innerWidth < 1024
@@ -17,10 +43,12 @@ const checkMobile = () => {
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
+  window.addEventListener('keydown', onKeydown)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', checkMobile)
+  window.removeEventListener('keydown', onKeydown)
 })
 
 // 路由切换时关闭移动端抽屉
@@ -57,10 +85,17 @@ watch(
 <template>
   <!-- 移动端遮罩 -->
   <Transition name="fade">
-    <div v-if="isMobileOpen" class="scrim" @click="isMobileOpen = false"></div>
+    <div v-if="isMobileOpen" class="scrim" aria-hidden="true" @click="closeMobile"></div>
   </Transition>
 
-  <aside class="sidebar" :class="{ 'is-open': isMobileOpen }" aria-label="文档导航">
+  <aside
+    id="doc-sidebar"
+    ref="sidebarRef"
+    class="sidebar"
+    :class="{ 'is-open': isMobileOpen }"
+    :inert="isMobile && !isMobileOpen"
+    aria-label="文档导航"
+  >
     <div class="brand">
       <router-link to="/" class="brand-link">
         <span class="brand-mark" aria-hidden="true">
@@ -93,7 +128,13 @@ watch(
           class="nav-section"
           :class="{ 'is-open': isOpen[index], 'is-active': currentSectionIndex === index }"
         >
-          <button class="nav-section-head" @click="toggleSection(index)" :aria-expanded="isOpen[index]">
+          <button
+            type="button"
+            class="nav-section-head"
+            :aria-expanded="isOpen[index]"
+            :aria-controls="`nav-section-${index}`"
+            @click="toggleSection(index)"
+          >
             <svg
               class="chevron"
               width="12"
@@ -111,7 +152,11 @@ watch(
             <span class="nav-section-count">{{ section.items.length }}</span>
           </button>
 
-          <div class="nav-section-body">
+          <div
+            :id="`nav-section-${index}`"
+            class="nav-section-body"
+            :inert="!isOpen[index]"
+          >
             <router-link
               v-for="item in section.items"
               :key="item.path"
@@ -139,10 +184,16 @@ watch(
   <!-- 移动端触发按钮 -->
   <button
     v-if="isMobile"
+    ref="triggerRef"
+    type="button"
     class="mobile-trigger"
     :class="{ hidden: isMobileOpen }"
-    @click="isMobileOpen = true"
     aria-label="打开导航菜单"
+    :aria-expanded="isMobileOpen"
+    :aria-hidden="isMobileOpen"
+    :tabindex="isMobileOpen ? -1 : 0"
+    aria-controls="doc-sidebar"
+    @click="openMobile"
   >
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
       <line x1="3" y1="6" x2="21" y2="6" />
@@ -382,6 +433,14 @@ watch(
   opacity: 0;
   pointer-events: none;
   transform: scale(0.9);
+}
+
+/* —— 移动端遮罩 —— */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: color-mix(in srgb, var(--ink) 45%, transparent);
 }
 
 /* —— 过渡 —— */
