@@ -69,7 +69,7 @@ const sections = docsStructure.slice(0, 4)
       <section class="hero">
         <div class="hero-grid">
           <div class="hero-left">
-            <p class="eyebrow">SvelteKit v3 · 中文文档</p>
+            <p class="eyebrow">SvelteKit v3</p>
             <h1 class="hero-title">
               精简高效的<br />
               <span class="accent">Web 开发</span>框架
@@ -226,7 +226,7 @@ const sections = docsStructure.slice(0, 4)
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2L3 14h6l-1 8 10-12h-6l1-8z" /></svg>
             </span>
             <div>
-              <p class="footer-name">SvelteKit 中文文档</p>
+              <p class="footer-name">SvelteKit</p>
               <p class="footer-tag">基于 SvelteKit v3 · MIT 协议</p>
             </div>
           </div>

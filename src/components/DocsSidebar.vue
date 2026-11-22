@@ -73,7 +73,6 @@ watch(
         </span>
         <span class="brand-text">
           <span class="brand-name">SvelteKit</span>
-          <span class="brand-sub">中文文档</span>
         </span>
       </router-link>
     </div>
@@ -209,14 +208,6 @@ watch(
   font-weight: 700;
   font-size: 1rem;
   letter-spacing: -0.02em;
-}
-
-.brand-sub {
-  font-size: 0.6875rem;
-  color: var(--faint);
-  font-family: var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 /* —— 导航 —— */
