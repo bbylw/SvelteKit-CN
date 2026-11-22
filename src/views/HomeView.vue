@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import Sidebar from '../components/Sidebar.vue'
+import DocsSidebar from '../components/DocsSidebar.vue'
 import { docsStructure } from '../docs-structure'
 
 const router = useRouter()
@@ -62,7 +62,7 @@ const sections = docsStructure.slice(0, 4)
 
 <template>
   <div class="home">
-    <Sidebar />
+    <DocsSidebar />
 
     <main class="main">
       <!-- ── 英雄区：非对称 ── -->

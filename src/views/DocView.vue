@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import Sidebar from '../components/Sidebar.vue'
+import DocsSidebar from '../components/DocsSidebar.vue'
 import { docsStructure } from '../docs-structure'
 import md from '../utils/markdown'
 
@@ -175,7 +175,7 @@ watch(() => route.path, (newPath) => loadDoc(newPath))
 
 <template>
   <div class="doc-shell">
-    <Sidebar />
+    <DocsSidebar />
 
     <main class="doc-main">
       <div class="doc-scroll" ref="articleRef">
