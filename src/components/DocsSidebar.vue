@@ -36,8 +36,14 @@ const onKeydown = (event: KeyboardEvent) => {
 }
 
 const checkMobile = () => {
-  isMobile.value = window.innerWidth < 1024
-  if (!isMobile.value) isMobileOpen.value = false
+  const mobile = window.innerWidth < 1024
+  isMobile.value = mobile
+  if (!mobile) {
+    isMobileOpen.value = false
+    // 从移动端拉宽到桌面时，抽屉的 inert 不能留在正文上
+    const main = document.getElementById('main-content')
+    if (main) main.inert = false
+  }
 }
 
 onMounted(() => {
@@ -157,15 +163,17 @@ watch(
             class="nav-section-body"
             :inert="!isOpen[index]"
           >
-            <router-link
-              v-for="item in section.items"
-              :key="item.path"
-              :to="item.path"
-              class="nav-item"
-              :class="{ active: route.path === item.path }"
-            >
-              {{ item.title }}
-            </router-link>
+            <div class="nav-section-inner">
+              <router-link
+                v-for="item in section.items"
+                :key="item.path"
+                :to="item.path"
+                class="nav-item"
+                :class="{ active: route.path === item.path }"
+              >
+                {{ item.title }}
+              </router-link>
+            </div>
           </div>
         </div>
       </div>
@@ -264,6 +272,7 @@ watch(
 /* —— 导航 —— */
 .nav {
   flex: 1;
+  overflow-x: hidden;
   overflow-y: auto;
   padding: 0.75rem 0 1.5rem;
 }
@@ -359,7 +368,13 @@ watch(
   grid-template-rows: 1fr;
 }
 
-.nav-section-body > .nav-item:first-child {
+/* 内层负责裁剪，0fr 才能真正收起整组链接 */
+.nav-section-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.nav-section-inner > .nav-item:first-child {
   margin-top: 0.25rem;
 }
 
@@ -379,10 +394,21 @@ watch(
 }
 
 .nav-item.active {
+  position: relative;
   color: var(--ink);
   font-weight: 500;
   background-color: var(--surface);
-  box-shadow: inset 2px 0 0 var(--flame);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--flame);
 }
 
 /* —— 底部 —— */

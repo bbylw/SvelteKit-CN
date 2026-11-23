@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import DocsSidebar from '../components/DocsSidebar.vue'
 import { docsStructure } from '../docs-structure'
-import md from '../utils/markdown'
+import { renderDoc } from '../utils/markdown'
 
 const route = useRoute()
+const router = useRouter()
 const content = ref('')
+const docTitle = ref('')
 const loading = ref(true)
 const error = ref<string | null>(null)
 const articleRef = ref<HTMLElement | null>(null)
@@ -151,6 +153,7 @@ const loadDoc = async (path: string, focusAfterLoad = false) => {
   error.value = null
   content.value = ''
   updateBreadcrumb()
+  docTitle.value = currentTitle.value
 
   const filePath = getFilePath(path)
 
@@ -170,8 +173,12 @@ const loadDoc = async (path: string, focusAfterLoad = false) => {
     }
     // 快速连续切换路由时，丢弃过期响应
     if (token !== loadToken) return
-    const markdownContent = text.replace(/^---[\s\S]*?---/, '')
-    content.value = md.render(markdownContent)
+    const rendered = renderDoc(text, path)
+    content.value = rendered.html
+    docTitle.value = rendered.title || currentTitle.value
+    document.title = docTitle.value
+      ? `${docTitle.value} · SvelteKit 中文文档`
+      : 'SvelteKit 中文文档'
   } catch (err) {
     if (token !== loadToken) return
     console.error('加载文档失败:', err)
@@ -182,11 +189,43 @@ const loadDoc = async (path: string, focusAfterLoad = false) => {
       loading.value = false
       await nextTick()
       if (articleRef.value) articleRef.value.scrollTop = 0
-      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+      // 带锚点的链接（如 routing#server）在正文渲染完成后跳到对应标题
+      const hashTarget = route.hash ? document.getElementById(route.hash.slice(1)) : null
+      if (hashTarget) {
+        hashTarget.scrollIntoView()
+      } else {
+        window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+      }
       // 路由切换后把焦点交给正文，方便键盘/读屏用户继续阅读
-      if (focusAfterLoad) mainRef.value?.focus()
+      if (focusAfterLoad) mainRef.value?.focus({ preventScroll: true })
     }
   }
+}
+
+// 正文里的站内链接交给路由处理，保留 SPA 导航
+const onContentClick = (event: MouseEvent) => {
+  if (
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  ) {
+    return
+  }
+
+  const anchor = (event.target as HTMLElement | null)?.closest('a')
+  const href = anchor?.getAttribute('href')
+  if (!anchor || !href || anchor.target === '_blank' || !href.startsWith('/')) return
+
+  const url = new URL(href, window.location.origin)
+  if (url.origin !== window.location.origin) return
+  // 同一篇文档内的锚点交给浏览器原生滚动
+  if (url.pathname === route.path) return
+
+  event.preventDefault()
+  void router.push(url.pathname + url.search + url.hash)
 }
 
 onMounted(() => loadDoc(route.path))
@@ -234,7 +273,10 @@ watch(
             <button type="button" class="btn btn-ghost" @click="loadDoc(route.path)">重新加载</button>
           </div>
 
-          <div v-else class="markdown-body" v-html="content"></div>
+          <div v-else class="doc-body">
+            <h1 v-if="docTitle" class="doc-title">{{ docTitle }}</h1>
+            <div class="markdown-body" v-html="content" @click="onContentClick"></div>
+          </div>
         </article>
 
         <!-- 上下篇导航 -->
@@ -477,6 +519,17 @@ watch(
 }
 
 /* ── Markdown 排版 ── */
+.doc-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  margin: 0 0 1.5rem;
+  color: var(--ink);
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--hairline);
+}
+
 .markdown-body {
   color: var(--ink-soft);
   font-size: 1rem;
@@ -516,6 +569,11 @@ watch(
   font-weight: 600;
   margin: 1.5rem 0 0.5rem;
   color: var(--ink);
+}
+
+.markdown-body :deep(:is(h1, h2, h3, h4, h5, h6)) {
+  /* 固定顶栏会遮住跳转目标，滚动时留出间距 */
+  scroll-margin-top: 5.5rem;
 }
 
 .markdown-body :deep(h5),
@@ -608,14 +666,68 @@ watch(
   margin: 0.4rem 0;
 }
 
+/* GitHub 风格提示块：> [!NOTE] 等 */
+.markdown-body :deep(blockquote.callout) {
+  background: var(--paper-soft);
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1.1rem;
+}
+
+.markdown-body :deep(blockquote.callout::before) {
+  content: attr(data-label);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--flame-text);
+  margin-bottom: 0.35rem;
+}
+
+.markdown-body :deep(blockquote.callout-tip) {
+  border-left-color: var(--moss);
+}
+
+.markdown-body :deep(blockquote.callout-tip::before) {
+  color: var(--moss);
+}
+
+.markdown-body :deep(blockquote.callout-warning),
+.markdown-body :deep(blockquote.callout-caution) {
+  border-left-color: var(--flame-strong);
+}
+
+.markdown-body :deep(blockquote.callout-legacy) {
+  border-left-color: var(--slate);
+}
+
+.markdown-body :deep(blockquote.callout-legacy::before) {
+  color: var(--slate);
+}
+
+.markdown-body :deep(blockquote.since) {
+  font-size: var(--text-sm);
+  background: var(--paper-soft);
+  border-left-color: var(--hairline-2);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1rem;
+  color: var(--muted);
+}
+
+.markdown-body :deep(.table-wrap) {
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+}
+
 .markdown-body :deep(table) {
   width: 100%;
   border-collapse: collapse;
-  margin: 1.5rem 0;
+  margin: 0;
   font-size: 0.9rem;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
 }
 
 .markdown-body :deep(th),
