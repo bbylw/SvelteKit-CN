@@ -9,6 +9,7 @@ import xml from 'highlight.js/lib/languages/xml'
 import yaml from 'highlight.js/lib/languages/yaml'
 import 'highlight.js/styles/github-dark.css'
 import { docsStructure } from '../docs-structure'
+import { docAnchorIds } from './doc-anchor-ids'
 
 // 只注册文档实际用到的语言，避免打包完整语法包
 hljs.registerLanguage('javascript', javascript)
@@ -80,6 +81,7 @@ const rewriteDirectives = (markdown: string): string =>
 
 interface DocEnv {
   routePath: string
+  headingIndex: number
   slugCounts: Map<string, number>
   [key: string | symbol]: unknown
 }
@@ -88,17 +90,34 @@ const asDocEnv = (env: unknown): DocEnv => env as DocEnv
 
 const isExternal = (href: string) => /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href)
 
+const decodeFragment = (fragment: string): string => {
+  try {
+    return decodeURIComponent(fragment)
+  } catch {
+    return fragment
+  }
+}
+
+// 标题 id 由上游英文标题生成，见 doc-anchor-ids.ts；表内路由不带前导斜杠
+const anchorIdsFor = (routePath: string): string[] | undefined =>
+  docAnchorIds[routePath.replace(/^\//, '')]
+
+// 目标文档里是否存在该标题 id
+const hasAnchor = (routePath: string, fragment: string): boolean =>
+  anchorIdsFor(routePath)?.includes(decodeFragment(fragment)) ?? false
+
 const resolveHref = (href: string): string => {
   if (!href) return href
   if (isExternal(href)) return href
 
-  // 同页锚点：统一转成小写 slug，和标题生成的 id 对齐
-  if (href.startsWith('#')) return `#${slugify(href.slice(1))}`
+  // 同页锚点保持上游原始大小写与标点（#Making-fetch-requests、#Options-envPrefix），
+  // 和标题生成的 id 完全一致，不能再做小写化
+  if (href.startsWith('#')) return href
 
   const hashIndex = href.indexOf('#')
   const pathPart = (hashIndex === -1 ? href : href.slice(0, hashIndex)).split('?')[0] ?? ''
   const rawHash = hashIndex === -1 ? '' : href.slice(hashIndex + 1)
-  const hash = rawHash ? `#${slugify(rawHash)}` : ''
+  const hash = rawHash ? `#${rawHash}` : ''
 
   if (!pathPart) return hash || href
 
@@ -107,19 +126,26 @@ const resolveHref = (href: string): string => {
   // ../svelte/... 指向 Svelte 官方文档，而不是本站
   if (stripped === 'svelte' || stripped.startsWith('svelte/')) {
     const tail = stripped === 'svelte' ? '' : `/${stripped.slice('svelte/'.length)}`
-    return `https://svelte.dev/docs/svelte${tail}${rawHash ? `#${rawHash}` : ''}`
+    return `https://svelte.dev/docs/svelte${tail}${hash}`
   }
 
   // 上游站点自身的根路径链接（/tutorial、/packages、/docs/cli 等）本站没有对应页面
   if (pathPart.startsWith('/')) {
     if (siteRoutes.has(pathPart)) return `${pathPart}${hash}`
-    return `https://svelte.dev${pathPart}${rawHash ? `#${rawHash}` : ''}`
+    return `https://svelte.dev${pathPart}${hash}`
   }
 
   // 文档之间用文件名互相引用（如 routing#server、glossary#SSR），按 slug 找站内路由
   const slug = stripped.split('/')[0] ?? ''
   const route = docRoutes.get(slug)
-  if (route) return `${route}${hash}`
+  if (route) {
+    // 参考页等页面没有生成该 API 标题（内容由官方类型定义生成），站内无处可跳，
+    // 直接指向官方英文文档中同名模块的锚点
+    if (rawHash && !hasAnchor(route, rawHash)) {
+      return `https://svelte.dev/docs/kit/${slug}${hash}`
+    }
+    return `${route}${hash}`
+  }
 
   return href
 }
@@ -146,9 +172,13 @@ md.renderer.rules.heading_open = (tokens, idx, options, env, self) => {
   const inline = tokens[idx + 1]
   if (token && inline) {
     const docEnv = asDocEnv(env)
-    const base = slugify(inline.content)
-    const count = docEnv.slugCounts.get(base) ?? 0
-    docEnv.slugCounts.set(base, count + 1)
+    // 译文标题按顺序沿用上游英文文档的标题 id，保证 #Making-fetch-requests
+    // 这类英文锚点仍然有效；没有对应上游 id 时才回退到中文 slug
+    const upstreamId = anchorIdsFor(docEnv.routePath)?.[docEnv.headingIndex]
+    docEnv.headingIndex += 1
+    const base = upstreamId ?? slugify(inline.content)
+    const count = upstreamId ? 0 : (docEnv.slugCounts.get(base) ?? 0)
+    if (!upstreamId) docEnv.slugCounts.set(base, count + 1)
     token.attrSet('id', count === 0 ? base : `${base}-${count}`)
   }
   return self.renderToken(tokens, idx, options)
@@ -234,7 +264,7 @@ export interface RenderedDoc {
 
 export const renderDoc = (raw: string, routePath: string): RenderedDoc => {
   const { title, body } = splitFrontmatter(raw)
-  const env: DocEnv = { routePath, slugCounts: new Map() }
+  const env: DocEnv = { routePath, headingIndex: 0, slugCounts: new Map() }
   return { title, html: md.render(rewriteDirectives(body), env) }
 }
 

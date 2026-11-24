@@ -11,6 +11,11 @@ const router = createRouter({
       component: HomeView,
     },
     ...docRoutes,
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../views/NotFoundView.vue'),
+    },
   ],
 })
 

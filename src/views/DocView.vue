@@ -190,7 +190,15 @@ const loadDoc = async (path: string, focusAfterLoad = false) => {
       await nextTick()
       if (articleRef.value) articleRef.value.scrollTop = 0
       // 带锚点的链接（如 routing#server）在正文渲染完成后跳到对应标题
-      const hashTarget = route.hash ? document.getElementById(route.hash.slice(1)) : null
+      let hashId = route.hash ? route.hash.slice(1) : ''
+      if (hashId) {
+        try {
+          hashId = decodeURIComponent(hashId)
+        } catch {
+          // 保留原始 fragment
+        }
+      }
+      const hashTarget = hashId ? document.getElementById(hashId) : null
       if (hashTarget) {
         hashTarget.scrollIntoView()
       } else {
